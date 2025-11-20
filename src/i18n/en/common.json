@@ -1,0 +1,31 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot your password?",
+    "loginError": "Login error"
+  },
+  "roles": {
+    "OWNER": "Owner",
+    "SUPERVISOR": "Supervisor",
+    "MERCHANT_USER": "User",
+    "CUSTOMER": "Customer"
+  }
+}
+

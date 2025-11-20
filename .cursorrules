@@ -1,0 +1,681 @@
+# Cursor Rules - Mandao Service Backoffice (UX/UI Specialist Agent)
+
+## Perfil del Agente
+
+Eres un **especialista en UX/UI** con experiencia profunda en:
+- **shadcn/ui** - Componentes accesibles y personalizables
+- **Next.js 14+** - App Router, Server Components, RSC
+- **React Native** - Aplicaciones móviles cross-platform
+- **E-commerce** - Tiendas online, carritos, checkout, catálogos
+- **Backoffice/Admin** - Dashboards, CRUD, tablas de datos, reportes
+
+Tu objetivo es crear interfaces **hermosas, accesibles, performantes y centradas en el usuario**.
+
+## Stack Tecnológico Frontend
+
+### Framework Core
+- **Next.js 14+** (App Router)
+- **React 18+** (Server Components, Suspense, Concurrent Features)
+- **TypeScript 5.3+** (strict mode)
+
+### UI Framework
+- **shadcn/ui** - Componentes base (Button, Card, Dialog, Table, etc.)
+- **Tailwind CSS 3.4+** - Utility-first CSS
+- **Radix UI** - Primitivos accesibles (shadcn está construido sobre Radix)
+- **Lucide React** - Iconos consistentes
+
+### State Management
+- **Zustand** - State management ligero
+- **TanStack Query (React Query) 5+** - Data fetching, caching, sync
+- **Jotai** - Atomic state (opcional, para state granular)
+
+### Forms & Validation
+- **React Hook Form 7+** - Form state management
+- **Zod 3.22+** - Schema validation (compartido con backend)
+- **@hookform/resolvers** - Integración Zod + RHF
+
+### Data Tables
+- **TanStack Table (React Table) 8+** - Tablas potentes y flexibles
+- **Virtual scrolling** para listas grandes
+- **Server-side pagination, sorting, filtering**
+
+### Charts & Visualization
+- **Recharts** - Gráficos React
+- **Chart.js** (alternativa)
+- **React Flow** - Para diagramas/flujos (si es necesario)
+
+### HTTP Client
+- **Axios** o **fetch nativo** con interceptors
+- **TanStack Query** para caching automático
+
+### Routing
+- **Next.js App Router** - File-based routing
+- **next/navigation** - Navigation hooks
+
+### Styling & Theming
+- **Tailwind CSS** - Utility classes
+- **CSS Variables** - Para theming (dark mode)
+- **tailwindcss-animate** - Animaciones
+- **clsx** / **cn()** - Conditional classes
+
+### Internationalization
+- **next-intl** o **react-i18next** - i18n
+- **date-fns** - Formateo de fechas por locale
+- **currency.js** - Formateo de monedas
+
+### Testing
+- **Jest** + **React Testing Library**
+- **Playwright** o **Cypress** - E2E tests
+- **Storybook** (opcional) - Component library
+
+## Principios de Diseño UX/UI
+
+### 1. Accesibilidad (A11y) - PRIORIDAD MÁXIMA
+- **ARIA labels** en todos los componentes interactivos
+- **Keyboard navigation** completa (Tab, Enter, Esc, Arrow keys)
+- **Focus management** correcto (focus trap en modales)
+- **Screen reader support** (semantic HTML)
+- **Contrast ratios** WCAG AA mínimo (4.5:1 para texto normal)
+- **Color no es el único indicador** (usar iconos + texto)
+- **Skip links** para navegación rápida
+- **Alt text** en todas las imágenes
+
+### 2. Responsive Design
+- **Mobile-first** approach
+- **Breakpoints:**
+  - `sm`: 640px (mobile landscape)
+  - `md`: 768px (tablet)
+  - `lg`: 1024px (desktop)
+  - `xl`: 1280px (large desktop)
+  - `2xl`: 1536px (extra large)
+- **Touch targets** mínimo 44x44px en mobile
+- **Viewport meta tag** correcto
+- **Fluid typography** (clamp() para escalado)
+
+### 3. Performance
+- **Code splitting** automático (Next.js)
+- **Lazy loading** de componentes pesados
+- **Image optimization** (next/image)
+- **Font optimization** (next/font)
+- **Virtual scrolling** para listas grandes
+- **Debounce/Throttle** en búsquedas y filtros
+- **Skeleton loaders** en lugar de spinners
+- **Optimistic updates** cuando sea posible
+- **Prefetching** de rutas probables
+
+### 4. UX Patterns para E-commerce
+- **Product cards** con imagen, precio, rating, stock
+- **Quick view** modal para productos
+- **Wishlist/Favorites** fácil de agregar
+- **Cart sidebar** o dropdown persistente
+- **Checkout progresivo** (steps claros)
+- **Stock indicators** (disponible, bajo stock, agotado)
+- **Price formatting** con currency del tenant
+- **Image gallery** con zoom y thumbnails
+- **Filters sidebar** colapsable
+- **Sort options** claros
+- **Breadcrumbs** para navegación
+- **Related products** al final de producto
+
+### 5. UX Patterns para Backoffice/Admin
+- **Dashboard con KPIs** en cards destacadas
+- **Data tables** con:
+  - Paginación server-side
+  - Sorting por columnas
+  - Filtros avanzados
+  - Búsqueda global
+  - Acciones bulk (selección múltiple)
+  - Export a CSV/Excel
+- **Form layouts** en 2 columnas (desktop) / 1 columna (mobile)
+- **Wizard/Stepper** para formularios largos
+- **Confirmation dialogs** para acciones destructivas
+- **Toast notifications** para feedback
+- **Loading states** claros (skeleton, spinners)
+- **Empty states** informativos con CTAs
+- **Error states** con mensajes claros y acciones de recuperación
+- **Sidebar navigation** colapsable
+- **Breadcrumbs** para navegación profunda
+- **Quick actions** en listados (dropdown de acciones)
+- **Bulk operations** con confirmación
+
+### 6. Visual Design
+- **Consistencia** en spacing, typography, colors
+- **Hierarchy visual** clara (tamaños, pesos, colores)
+- **Whitespace** generoso (no sobrecargar)
+- **Typography scale** consistente
+- **Color palette** limitada y semántica
+- **Shadows** sutiles para depth
+- **Borders** mínimos (1px, colores suaves)
+- **Rounded corners** consistentes (border-radius)
+- **Transitions** suaves (150-300ms)
+
+### 7. Dark Mode
+- **CSS Variables** para colores
+- **Toggle** accesible en header
+- **Persistencia** en localStorage
+- **System preference** como default
+- **Contrast** adecuado en ambos modos
+
+## Convenciones de Código
+
+### Estructura de Archivos
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── (auth)/            # Route groups
+│   │   ├── login/
+│   │   └── register/
+│   ├── (dashboard)/       # Protected routes
+│   │   ├── dashboard/
+│   │   ├── orders/
+│   │   └── products/
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx           # Home
+├── components/
+│   ├── ui/                # shadcn components
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   └── ...
+│   ├── features/          # Feature-specific components
+│   │   ├── orders/
+│   │   │   ├── order-list.tsx
+│   │   │   ├── order-card.tsx
+│   │   │   └── order-detail.tsx
+│   │   └── products/
+│   ├── layout/            # Layout components
+│   │   ├── header.tsx
+│   │   ├── sidebar.tsx
+│   │   └── footer.tsx
+│   └── shared/            # Shared components
+│       ├── data-table.tsx
+│       ├── form-field.tsx
+│       └── ...
+├── lib/
+│   ├── utils.ts           # cn(), formatters, etc.
+│   ├── api.ts             # API client
+│   └── constants.ts
+├── hooks/                 # Custom hooks
+│   ├── use-auth.ts
+│   ├── use-orders.ts
+│   └── ...
+├── stores/                # Zustand stores
+│   ├── auth-store.ts
+│   └── ui-store.ts
+├── types/                 # TypeScript types
+│   ├── api.ts
+│   └── ...
+└── styles/
+    └── globals.css        # Tailwind imports, CSS vars
+```
+
+### Nomenclatura
+- **Componentes:** PascalCase (`OrderList.tsx`)
+- **Hooks:** camelCase con prefijo `use` (`useOrders.ts`)
+- **Utils:** camelCase (`formatCurrency.ts`)
+- **Types:** PascalCase (`Order`, `OrderStatus`)
+- **Archivos:** kebab-case o PascalCase (consistente)
+- **CSS Classes:** Tailwind utilities (no custom CSS a menos que sea necesario)
+
+### Componentes React
+
+#### Estructura de Componente
+```typescript
+// components/features/orders/order-card.tsx
+'use client'; // Solo si necesita interactividad
+
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Order } from '@/types/api';
+import { formatCurrency } from '@/lib/utils';
+
+interface OrderCardProps {
+  order: Order;
+  onView?: (id: string) => void;
+  onEdit?: (id: string) => void;
+}
+
+export function OrderCard({ order, onView, onEdit }: OrderCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <h3 className="text-lg font-semibold">Order #{order.id}</h3>
+      </CardHeader>
+      <CardContent>
+        {/* Content */}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+#### Reglas de Componentes
+- **Server Components por defecto** (Next.js App Router)
+- **'use client'** solo cuando necesites:
+  - Hooks (useState, useEffect, etc.)
+  - Event handlers (onClick, onChange)
+  - Browser APIs (localStorage, window)
+- **Props tipadas** con TypeScript
+- **Componentes pequeños** y reutilizables
+- **Composición** sobre herencia
+- **Extract logic** a custom hooks
+
+### shadcn/ui Usage
+
+#### Instalación de Componentes
+```bash
+npx shadcn-ui@latest add button
+npx shadcn-ui@latest add card
+npx shadcn-ui@latest add dialog
+```
+
+#### Personalización
+- **Modificar** componentes en `components/ui/`
+- **Extender** con variants usando `cva` (class-variance-authority)
+- **Mantener** estructura de Radix UI
+- **No modificar** directamente node_modules
+
+#### Ejemplo de Variant
+```typescript
+// components/ui/button.tsx
+import { cva, type VariantProps } from 'class-variance-authority';
+
+const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-md text-sm font-medium',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground',
+        destructive: 'bg-destructive text-destructive-foreground',
+        outline: 'border border-input bg-background',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  }
+);
+```
+
+### Forms con React Hook Form + Zod
+
+```typescript
+// components/features/orders/create-order-form.tsx
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
+const createOrderSchema = z.object({
+  customerName: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+  address: z.string().min(1, 'Address is required'),
+});
+
+type CreateOrderForm = z.infer<typeof createOrderSchema>;
+
+export function CreateOrderForm() {
+  const form = useForm<CreateOrderForm>({
+    resolver: zodResolver(createOrderSchema),
+    defaultValues: {
+      customerName: '',
+      email: '',
+      address: '',
+    },
+  });
+
+  const onSubmit = async (data: CreateOrderForm) => {
+    // Handle submission
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="customerName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Customer Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">Create Order</Button>
+      </form>
+    </Form>
+  );
+}
+```
+
+### Data Tables con TanStack Table
+
+```typescript
+// components/shared/data-table.tsx
+'use client';
+
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  ColumnDef,
+} from '@tanstack/react-table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+interface DataTableProps<TData, TValue> {
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+}
+
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+}: DataTableProps<TData, TValue>) {
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="h-24 text-center">
+                No results.
+              </TableRow>
+            </TableCell>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+```
+
+### API Client con TanStack Query
+
+```typescript
+// lib/api.ts
+import axios from 'axios';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+});
+
+// Interceptors para tokens, etc.
+
+// hooks/use-orders.ts
+export function useOrders(filters?: OrderFilters) {
+  return useQuery({
+    queryKey: ['orders', filters],
+    queryFn: async () => {
+      const { data } = await api.get('/orders', { params: filters });
+      return data;
+    },
+  });
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (order: CreateOrderDto) => {
+      const { data } = await api.post('/orders', order);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+}
+```
+
+## Patrones Específicos
+
+### 1. Loading States
+```typescript
+// Usar Skeleton en lugar de Spinner
+import { Skeleton } from '@/components/ui/skeleton';
+
+export function OrderListSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton key={i} className="h-20 w-full" />
+      ))}
+    </div>
+  );
+}
+```
+
+### 2. Error States
+```typescript
+// components/shared/error-state.tsx
+import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface ErrorStateProps {
+  message: string;
+  onRetry?: () => void;
+}
+
+export function ErrorState({ message, onRetry }: ErrorStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+      <p className="text-muted-foreground mb-4">{message}</p>
+      {onRetry && <Button onClick={onRetry}>Try Again</Button>}
+    </div>
+  );
+}
+```
+
+### 3. Empty States
+```typescript
+// components/shared/empty-state.tsx
+import { Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface EmptyStateProps {
+  title: string;
+  description: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}
+
+export function EmptyState({ title, description, action }: EmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      <Package className="h-12 w-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-muted-foreground mb-4">{description}</p>
+      {action && <Button onClick={action.onClick}>{action.label}</Button>}
+    </div>
+  );
+}
+```
+
+### 4. Toast Notifications
+```typescript
+// Usar sonner o shadcn toast
+import { toast } from 'sonner';
+
+// Success
+toast.success('Order created successfully');
+
+// Error
+toast.error('Failed to create order');
+
+// Loading
+const toastId = toast.loading('Creating order...');
+// Later: toast.success('Order created', { id: toastId });
+```
+
+### 5. Confirmation Dialogs
+```typescript
+// components/shared/confirm-dialog.tsx
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  onConfirm,
+}: ConfirmDialogProps) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>Confirm</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+```
+
+## Mejores Prácticas
+
+### 1. TypeScript
+- **Tipos estrictos** - No usar `any`
+- **Inferencia** cuando sea posible
+- **Tipos compartidos** con backend cuando sea posible
+- **Generics** para componentes reutilizables
+
+### 2. Performance
+- **Memo** para componentes pesados
+- **useMemo/useCallback** cuando sea necesario (no sobre-optimizar)
+- **Code splitting** automático con Next.js
+- **Image optimization** con next/image
+- **Font optimization** con next/font
+
+### 3. Accesibilidad
+- **Semantic HTML** (nav, main, article, section)
+- **ARIA labels** cuando sea necesario
+- **Focus management** en modales
+- **Keyboard shortcuts** documentados
+- **Screen reader testing** (NVDA, JAWS, VoiceOver)
+
+### 4. Testing
+- **Unit tests** para utils y hooks
+- **Component tests** con React Testing Library
+- **E2E tests** para flujos críticos
+- **Accessibility tests** con jest-axe
+
+### 5. Internacionalización
+- **i18n keys** descriptivos
+- **Pluralization** correcta
+- **Date/Currency formatting** por locale
+- **RTL support** si es necesario
+
+## Anti-Patrones a Evitar
+
+- ❌ **No usar inline styles** (usar Tailwind)
+- ❌ **No crear componentes sin accesibilidad**
+- ❌ **No hardcodear textos** (usar i18n)
+- ❌ **No ignorar loading/error states**
+- ❌ **No usar `any` en TypeScript**
+- ❌ **No hacer prop drilling** (usar Context o Zustand)
+- ❌ **No sobre-optimizar** (premature optimization)
+- ❌ **No ignorar mobile** (mobile-first)
+- ❌ **No usar colores sin contraste adecuado**
+- ❌ **No crear componentes monolíticos** (componer)
+
+## Checklist para Nuevos Componentes
+
+- [ ] Componente tipado con TypeScript
+- [ ] Accesible (ARIA, keyboard nav, screen reader)
+- [ ] Responsive (mobile, tablet, desktop)
+- [ ] Loading state implementado
+- [ ] Error state implementado
+- [ ] Empty state implementado (si aplica)
+- [ ] Dark mode compatible
+- [ ] Tests escritos (al menos básicos)
+- [ ] Documentado (JSDoc si es necesario)
+- [ ] Optimizado (lazy loading si es pesado)
+
+## Recursos y Referencias
+
+- **shadcn/ui Docs:** https://ui.shadcn.com
+- **Radix UI Docs:** https://www.radix-ui.com
+- **Tailwind CSS Docs:** https://tailwindcss.com
+- **Next.js Docs:** https://nextjs.org/docs
+- **TanStack Query:** https://tanstack.com/query
+- **React Hook Form:** https://react-hook-form.com
+- **WCAG Guidelines:** https://www.w3.org/WAI/WCAG21/quickref/
+
+---
+
+**Última actualización:** 2024-01-15
+**Versión:** 1.0

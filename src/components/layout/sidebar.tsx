@@ -1,0 +1,200 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { usePermissions } from '@/lib/hooks/use-permissions';
+import { cn } from '@/lib/utils/cn';
+import {
+  LayoutDashboard,
+  Package,
+  Truck,
+  Users,
+  Settings,
+  CreditCard,
+  BarChart3,
+  MapPin,
+  Car,
+  Tags,
+  Award,
+  Navigation,
+  DollarSign,
+  Crown,
+  Hash,
+} from 'lucide-react';
+
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  requiredPermission?: {
+    resource: string;
+    action: 'read' | 'create' | 'update' | 'delete' | 'manage';
+  };
+  allowedRoles?: string[];
+}
+
+const navItems: NavItem[] = [
+  {
+    title: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    requiredPermission: { resource: 'dashboard', action: 'read' },
+  },
+  {
+    title: 'Órdenes',
+    href: '/orders',
+    icon: Package,
+    requiredPermission: { resource: 'orders', action: 'read' },
+  },
+  {
+    title: 'Productos',
+    href: '/products',
+    icon: Package,
+    requiredPermission: { resource: 'products', action: 'read' },
+  },
+  {
+    title: 'Categorías',
+    href: '/categories',
+    icon: Tags,
+    requiredPermission: { resource: 'categories', action: 'read' },
+  },
+  {
+    title: 'Marcas',
+    href: '/brands',
+    icon: Award,
+    requiredPermission: { resource: 'brands', action: 'read' },
+  },
+  {
+    title: 'Drivers',
+    href: '/drivers',
+    icon: Truck,
+    requiredPermission: { resource: 'drivers', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR', 'LOGISTICS_PROVIDER'],
+  },
+  {
+    title: 'Vehículos',
+    href: '/vehicles',
+    icon: Car,
+    requiredPermission: { resource: 'vehicles', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR', 'LOGISTICS_PROVIDER'],
+  },
+  {
+    title: 'Sucursales',
+    href: '/branches',
+    icon: MapPin,
+    requiredPermission: { resource: 'branches', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR'],
+  },
+  {
+    title: 'Zonas de Entrega',
+    href: '/delivery-zones',
+    icon: Navigation,
+    requiredPermission: { resource: 'delivery-zones', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR'],
+  },
+  {
+    title: 'Tarifas de Entrega',
+    href: '/delivery-rates',
+    icon: DollarSign,
+    requiredPermission: { resource: 'delivery-rates', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR'],
+  },
+  {
+    title: 'Usuarios',
+    href: '/users',
+    icon: Users,
+    requiredPermission: { resource: 'users', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR', 'LOGISTICS_PROVIDER'],
+  },
+  {
+    title: 'Pagos',
+    href: '/payments/transactions',
+    icon: CreditCard,
+    requiredPermission: { resource: 'payments', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR'],
+  },
+  {
+    title: 'Suscripción',
+    href: '/subscriptions',
+    icon: Crown,
+    requiredPermission: { resource: 'subscriptions', action: 'read' },
+    allowedRoles: ['OWNER'],
+  },
+  {
+    title: 'Reportes',
+    href: '/reports',
+    icon: BarChart3,
+    requiredPermission: { resource: 'reports', action: 'read' },
+  },
+  {
+    title: 'Contadores',
+    href: '/order-counters',
+    icon: Hash,
+    requiredPermission: { resource: 'order-counters', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR'],
+  },
+  {
+    title: 'Proveedores',
+    href: '/logistics-providers',
+    icon: Truck,
+    requiredPermission: { resource: 'logistics-providers', action: 'read' },
+    allowedRoles: ['OWNER', 'SUPERVISOR'],
+  },
+  {
+    title: 'Configuración',
+    href: '/settings',
+    icon: Settings,
+    requiredPermission: { resource: 'tenants', action: 'update' },
+    allowedRoles: ['OWNER'],
+  },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const { hasPermission, role } = usePermissions();
+
+  const filteredNavItems = navItems.filter((item) => {
+    // Excluir CUSTOMER del backoffice (solo para storefront)
+    if (role === 'CUSTOMER') {
+      return false;
+    }
+
+    if (item.allowedRoles && role && !item.allowedRoles.includes(role)) {
+      return false;
+    }
+    if (item.requiredPermission) {
+      return hasPermission(item.requiredPermission.resource, item.requiredPermission.action);
+    }
+    return true;
+  });
+
+  return (
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-14">
+      <div className="flex-1 flex flex-col overflow-y-auto border-r bg-background">
+        <nav className="flex-1 px-2 py-4 space-y-1">
+          {filteredNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname?.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
+              >
+                <Icon className="mr-3 h-5 w-5" />
+                {item.title}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </aside>
+  );
+}
+
