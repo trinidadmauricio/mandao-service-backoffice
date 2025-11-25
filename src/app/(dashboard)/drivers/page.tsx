@@ -271,10 +271,6 @@ export default function DriversPage() {
               <DataTable
                 columns={columns}
                 data={drivers}
-                searchKey="user"
-                searchPlaceholder="Buscar drivers..."
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
                 pageSize={filters.limit || 10}
                 totalCount={totalCount}
                 currentPage={filters.page || 1}
