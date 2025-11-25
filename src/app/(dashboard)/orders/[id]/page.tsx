@@ -8,7 +8,7 @@ import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatDate } from '@/lib/utils/date';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrency, type CurrencyCode } from '@/lib/utils/currency';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { AssignDriverDialog } from '@/components/orders/assign-driver-dialog';
 import { ChangeBranchDialog } from '@/components/orders/change-branch-dialog';
@@ -159,7 +159,7 @@ export default function OrderDetailPage() {
                   <p className="text-sm font-medium text-muted-foreground">Total</p>
                   <p className="text-2xl font-bold">
                     {currentTotal 
-                      ? formatCurrency(Number(currentTotal.total_amount), currentTotal.currency)
+                      ? formatCurrency(Number(currentTotal.total_amount), currentTotal.currency as CurrencyCode)
                       : 'N/A'}
                   </p>
                 </div>
@@ -289,14 +289,14 @@ export default function OrderDetailPage() {
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span>Cantidad: {quantity}</span>
                               <span>•</span>
-                              <span>Precio unitario: {formatCurrency(unitPrice, currency)}</span>
+                              <span>Precio unitario: {formatCurrency(unitPrice, currency as CurrencyCode)}</span>
                             </div>
                             {item.notes && (
                               <p className="text-xs text-muted-foreground mt-1 italic">Nota: {String(item.notes)}</p>
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(subtotal, currency)}</p>
+                            <p className="font-semibold">{formatCurrency(subtotal, currency as CurrencyCode)}</p>
                           </div>
                         </div>
                       );
@@ -323,7 +323,7 @@ export default function OrderDetailPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="font-medium">
-                        {formatCurrency(Number(currentTotal.subtotal), currentTotal.currency)}
+                        {formatCurrency(Number(currentTotal.subtotal), currentTotal.currency as CurrencyCode)}
                       </span>
                     </div>
                     {Number(currentTotal.tax_amount) > 0 && (
@@ -332,7 +332,7 @@ export default function OrderDetailPage() {
                           Impuesto ({Number(currentTotal.tax_rate) * 100}%)
                         </span>
                         <span className="font-medium">
-                          {formatCurrency(Number(currentTotal.tax_amount), currentTotal.currency)}
+                          {formatCurrency(Number(currentTotal.tax_amount), currentTotal.currency as CurrencyCode)}
                         </span>
                       </div>
                     )}
@@ -340,7 +340,7 @@ export default function OrderDetailPage() {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tarifa de entrega</span>
                         <span className="font-medium">
-                          {formatCurrency(Number(currentTotal.delivery_fee), currentTotal.currency)}
+                          {formatCurrency(Number(currentTotal.delivery_fee), currentTotal.currency as CurrencyCode)}
                         </span>
                       </div>
                     )}
@@ -348,7 +348,7 @@ export default function OrderDetailPage() {
                       <div className="flex justify-between text-sm text-destructive">
                         <span>Descuento</span>
                         <span className="font-medium">
-                          -{formatCurrency(Number(currentTotal.discount_amount), currentTotal.currency)}
+                          -{formatCurrency(Number(currentTotal.discount_amount), currentTotal.currency as CurrencyCode)}
                         </span>
                       </div>
                     )}
@@ -356,7 +356,7 @@ export default function OrderDetailPage() {
                     <div className="flex justify-between">
                       <span className="text-base font-semibold">Total</span>
                       <span className="text-xl font-bold">
-                        {formatCurrency(Number(currentTotal.total_amount), currentTotal.currency)}
+                        {formatCurrency(Number(currentTotal.total_amount), currentTotal.currency as CurrencyCode)}
                       </span>
                     </div>
                   </div>
@@ -418,18 +418,18 @@ export default function OrderDetailPage() {
                       <p className="text-xs font-medium text-muted-foreground mb-1">Dirección</p>
                       <p className="font-medium text-sm">
                         {String(order.delivery_address?.street || '')}
-                        {order.delivery_address?.city && `, ${String(order.delivery_address.city)}`}
+                        {order.delivery_address?.city ? `, ${String(order.delivery_address.city || '')}` : ''}
                       </p>
-                      {order.delivery_address?.state && (
+                      {order.delivery_address?.state ? (
                         <p className="text-sm text-muted-foreground">
-                          {String(order.delivery_address.state)}
+                          {String(order.delivery_address.state || '')}
                         </p>
-                      )}
-                      {order.delivery_address?.country && (
+                      ) : null}
+                      {order.delivery_address?.country ? (
                         <p className="text-sm text-muted-foreground">
-                          {String(order.delivery_address.country)}
+                          {String(order.delivery_address.country || '')}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-1">Coordenadas</p>
@@ -525,24 +525,24 @@ export default function OrderDetailPage() {
                     const branch = currentBranch.branch_snapshot as Record<string, unknown>;
                     return (
                       <div className="space-y-3">
-                        {branch.name && (
+                        {branch.name ? (
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-1">Nombre</p>
-                            <p className="font-medium">{String(branch.name)}</p>
+                            <p className="font-medium">{String(branch.name || '')}</p>
                           </div>
-                        )}
-                        {branch.address && (
+                        ) : null}
+                        {branch.address ? (
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-1">Dirección</p>
-                            <p className="font-medium text-sm">{String(branch.address)}</p>
+                            <p className="font-medium text-sm">{String(branch.address || '')}</p>
                           </div>
-                        )}
-                        {branch.contact_phone && (
+                        ) : null}
+                        {branch.contact_phone ? (
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-1">Teléfono</p>
-                            <p className="font-medium text-sm">{String(branch.contact_phone)}</p>
+                            <p className="font-medium text-sm">{String(branch.contact_phone || '')}</p>
                           </div>
-                        )}
+                        ) : null}
                         {branch.is_main !== undefined && (
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-1">Tipo</p>

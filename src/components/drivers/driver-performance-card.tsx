@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils/cn';
-import { Star, Package, CheckCircle, Clock, XCircle } from 'lucide-react';
-import type { Driver } from '@/types/api';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Star, Package, CheckCircle, Clock, XCircle } from "lucide-react";
+import type { Driver } from "@/types/api";
 
 interface DriverPerformanceCardProps {
   driver: Driver;
@@ -12,23 +11,23 @@ interface DriverPerformanceCardProps {
 
 const statusConfig = {
   AVAILABLE: {
-    variant: 'success' as const,
-    label: 'Disponible',
+    variant: "success" as const,
+    label: "Disponible",
     icon: <CheckCircle className="h-4 w-4" />,
   },
   BUSY: {
-    variant: 'warning' as const,
-    label: 'Ocupado',
+    variant: "warning" as const,
+    label: "Ocupado",
     icon: <Clock className="h-4 w-4" />,
   },
   OFFLINE: {
-    variant: 'outline' as const,
-    label: 'Desconectado',
+    variant: "outline" as const,
+    label: "Desconectado",
     icon: <XCircle className="h-4 w-4" />,
   },
   SUSPENDED: {
-    variant: 'destructive' as const,
-    label: 'Suspendido',
+    variant: "destructive" as const,
+    label: "Suspendido",
     icon: <XCircle className="h-4 w-4" />,
   },
 };
@@ -36,8 +35,9 @@ const statusConfig = {
 export function DriverPerformanceCard({ driver }: DriverPerformanceCardProps) {
   const rating = driver.rating_avg || 0;
   const totalDeliveries = driver.total_deliveries || 0;
-  const status = driver.availability_status || 'OFFLINE';
-  const statusInfo = statusConfig[status as keyof typeof statusConfig] || statusConfig.OFFLINE;
+  const status = driver.availability_status || "OFFLINE";
+  const statusInfo =
+    statusConfig[status as keyof typeof statusConfig] || statusConfig.OFFLINE;
 
   return (
     <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
@@ -52,7 +52,9 @@ export function DriverPerformanceCard({ driver }: DriverPerformanceCardProps) {
             </div>
             <div>
               <span className="text-sm font-medium">Calificación Promedio</span>
-              <p className="text-xs text-muted-foreground">Basada en entregas completadas</p>
+              <p className="text-xs text-muted-foreground">
+                Basada en entregas completadas
+              </p>
             </div>
           </div>
           <Badge variant="default" className="text-lg px-3 py-1">
@@ -67,7 +69,9 @@ export function DriverPerformanceCard({ driver }: DriverPerformanceCardProps) {
             </div>
             <div>
               <span className="text-sm font-medium">Total de Entregas</span>
-              <p className="text-xs text-muted-foreground">Entregas completadas</p>
+              <p className="text-xs text-muted-foreground">
+                Entregas completadas
+              </p>
             </div>
           </div>
           <Badge variant="secondary" className="text-lg px-3 py-1">
@@ -77,8 +81,13 @@ export function DriverPerformanceCard({ driver }: DriverPerformanceCardProps) {
 
         <div className="pt-4 border-t">
           <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
-            <span className="text-sm font-medium text-muted-foreground">Estado Actual</span>
-            <Badge variant={statusInfo.variant} className="flex items-center gap-1.5">
+            <span className="text-sm font-medium text-muted-foreground">
+              Estado Actual
+            </span>
+            <Badge
+              variant={statusInfo.variant}
+              className="flex items-center gap-1.5"
+            >
               {statusInfo.icon}
               {statusInfo.label}
             </Badge>
@@ -88,4 +97,3 @@ export function DriverPerformanceCard({ driver }: DriverPerformanceCardProps) {
     </Card>
   );
 }
-

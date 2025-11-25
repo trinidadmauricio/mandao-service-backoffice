@@ -6,7 +6,7 @@ import { useOrder } from '@/lib/hooks/use-orders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils/date';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrency, type CurrencyCode } from '@/lib/utils/currency';
 import { RefundDialog } from '@/components/payments/refund-dialog';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -112,7 +112,7 @@ export default function OrderPaymentsPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Total Pagado:</span>
                 <span className="font-bold text-lg">
-                  {formatCurrency(totalPaid, payments?.[0]?.currency || 'USD')}
+                  {formatCurrency(totalPaid, (payments?.[0]?.currency || 'USD') as CurrencyCode)}
                 </span>
               </div>
               {order?.order_summary_totals?.[0] && (
@@ -121,7 +121,7 @@ export default function OrderPaymentsPage() {
                   <span className="font-medium">
                     {formatCurrency(
                       Number(order.order_summary_totals[0].total_amount),
-                      order.order_summary_totals[0].currency
+                      order.order_summary_totals[0].currency as CurrencyCode
                     )}
                   </span>
                 </div>
@@ -146,7 +146,7 @@ export default function OrderPaymentsPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <p className="font-medium">
-                            {formatCurrency(payment.amount, payment.currency)}
+                            {formatCurrency(payment.amount, payment.currency as CurrencyCode)}
                           </p>
                           <Badge variant="outline">
                             {transactionTypeLabels[payment.transaction_type] || payment.transaction_type}

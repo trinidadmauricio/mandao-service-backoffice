@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useTenant, useUpdateTenant } from '@/lib/hooks/use-tenant';
+import { useTenant, useUpdateTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ type DeliverySettingsFormData = z.infer<typeof deliverySettingsSchema>;
 
 export default function TenantDeliverySettingsPage() {
   const { user } = useAuth();
-  const { data: tenant, isLoading } = useTenant(user?.tenant_id || '');
+  const { tenant, isLoading } = useTenant(user?.tenant_id || '');
   const updateTenant = useUpdateTenant();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -47,15 +47,19 @@ export default function TenantDeliverySettingsPage() {
     setError(null);
     setSuccess(false);
 
+    if (!tenant) return;
+    
+    const tenantData = tenant as unknown as Tenant;
+    
     try {
       await updateTenant.mutateAsync({
-        id: tenant.id,
+        id: tenantData.id,
         data: {
           settings: {
-            ...(tenant.settings as Record<string, unknown> || {}),
+            ...(tenantData.settings as Record<string, unknown> || {}),
             delivery: data,
           },
-        },
+        } as any,
       });
       setSuccess(true);
     } catch (err) {

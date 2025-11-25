@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/date';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrency, type CurrencyCode } from '@/lib/utils/currency';
 import { Clock, Truck, MapPin, Package, DollarSign, RefreshCw } from 'lucide-react';
 
 interface OrderTimelineProps {
@@ -27,8 +27,9 @@ interface OrderTimelineProps {
     order_items?: Array<{
       id: string;
       product_snapshot: Record<string, unknown>;
-      quantity: number;
-      unit_price: number;
+      quantity: number | string;
+      unit_price: number | string;
+      notes?: string;
       created_at: string;
     }>;
     order_summary_totals?: Array<{
@@ -128,7 +129,7 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
     events.push({
       type: 'totals',
       title: `Totales recalculados (v${total.version})`,
-      description: `Total: ${formatCurrency(totalAmount, total.currency)}`,
+      description: `Total: ${formatCurrency(totalAmount, total.currency as CurrencyCode)}`,
       date: total.created_at,
       icon: <DollarSign className="h-4 w-4" />,
     });

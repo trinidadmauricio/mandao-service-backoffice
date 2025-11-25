@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useOrders, type OrdersFilters } from '@/lib/hooks/use-orders';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { useTenant } from '@/lib/hooks/use-tenant';
+import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -149,22 +149,22 @@ export default function OrdersPage() {
           </div>
           {hasPermission('orders', 'create') && (
             <div className="flex gap-2">
-              {(tenant?.type === 'ON_DEMAND' || tenant?.type === 'HYBRID') && (
+              {(tenant as Tenant | null) && ((tenant as Tenant).type === 'ON_DEMAND' || (tenant as Tenant).type === 'HYBRID') ? (
                 <Link href="/orders/new/on-demand">
                   <Button variant="outline">
                     <Plus className="h-4 w-4 mr-2" />
                     Orden On-Demand
                   </Button>
                 </Link>
-              )}
-              {(tenant?.type === 'RETAIL' || tenant?.type === 'HYBRID') && (
+              ) : null}
+              {(tenant as Tenant | null) && ((tenant as Tenant).type === 'RETAIL' || (tenant as Tenant).type === 'HYBRID') ? (
                 <Link href="/orders/new/retail">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Orden Retail
                   </Button>
                 </Link>
-              )}
+              ) : null}
             </div>
           )}
         </div>
