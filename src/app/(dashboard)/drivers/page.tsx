@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useDrivers, useDeleteDriver, type DriversFilters } from '@/lib/hooks/use-drivers';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { Button } from '@/components/ui/button';
@@ -9,18 +9,41 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, Edit, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import type { Driver } from '@/types/api';
 
 export default function DriversPage() {
+  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<DriversFilters>({
     page: 1,
     limit: 10,
     search: '',
   });
+
+  // Debounce search term
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // Update filters when debounced search changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      search: debouncedSearch || undefined,
+      page: 1, // Reset to first page when search changes
+    }));
+  }, [debouncedSearch]);
+
   const { data: driversResponse, isLoading, error } = useDrivers(filters);
   const deleteDriver = useDeleteDriver();
   const { hasPermission } = usePermissions();
@@ -182,7 +205,67 @@ export default function DriversPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Lista de Drivers</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Lista de Drivers</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre, email o licencia..."
+                      className="pl-8 w-64"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <Select
+                    value={filters.availability_status || 'all'}
+                    onValueChange={(value) =>
+                      setFilters({
+                        ...filters,
+                        availability_status:
+                          value === 'all'
+                            ? undefined
+                            : (value as DriversFilters['availability_status']),
+                        page: 1,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filtrar por estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="AVAILABLE">Disponible</SelectItem>
+                      <SelectItem value="BUSY">Ocupado</SelectItem>
+                      <SelectItem value="OFFLINE">Desconectado</SelectItem>
+                      <SelectItem value="SUSPENDED">Suspendido</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={filters.work_type || 'all'}
+                    onValueChange={(value) =>
+                      setFilters({
+                        ...filters,
+                        work_type:
+                          value === 'all'
+                            ? undefined
+                            : (value as DriversFilters['work_type']),
+                        page: 1,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filtrar por tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="FULL_TIME">Tiempo Completo</SelectItem>
+                      <SelectItem value="PART_TIME">Medio Tiempo</SelectItem>
+                      <SelectItem value="FREELANCE">Freelance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <DataTable
@@ -190,8 +273,8 @@ export default function DriversPage() {
                 data={drivers}
                 searchKey="user"
                 searchPlaceholder="Buscar drivers..."
-                searchValue={filters.search}
-                onSearchChange={(value) => setFilters({ ...filters, search: value, page: 1 })}
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
                 pageSize={filters.limit || 10}
                 totalCount={totalCount}
                 currentPage={filters.page || 1}
