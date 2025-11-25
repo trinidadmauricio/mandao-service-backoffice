@@ -5,6 +5,8 @@ import { RoleGuard } from '@/components/auth/role-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -13,14 +15,22 @@ export default function VehiclesPage() {
   const { data: vehicles, isLoading, error } = useVehicles();
   const deleteVehicle = useDeleteVehicle();
   const { hasPermission } = usePermissions();
+  const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
-      try {
-        await deleteVehicle.mutateAsync(id);
-      } catch (error) {
-        console.error('Error deleting vehicle:', error);
-      }
+    try {
+      await deleteVehicle.mutateAsync(id);
+      toast({
+        title: 'Vehículo eliminado',
+        description: 'El vehículo ha sido eliminado exitosamente.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el vehículo. Por favor, intenta nuevamente.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -126,15 +136,24 @@ export default function VehiclesPage() {
                           </Link>
                         )}
                         {hasPermission('vehicles', 'delete') && (
-                          <Button
+                          <ConfirmDialog
+                            trigger={
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={deleteVehicle.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Eliminar
+                              </Button>
+                            }
+                            title="Eliminar Vehículo"
+                            description={`¿Estás seguro de que quieres eliminar el vehículo "${vehicle.license_plate}"? Esta acción no se puede deshacer.`}
+                            confirmLabel="Eliminar"
+                            cancelLabel="Cancelar"
                             variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(vehicle.id)}
-                            disabled={deleteVehicle.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
-                          </Button>
+                            onConfirm={() => handleDelete(vehicle.id)}
+                          />
                         )}
                       </div>
                     </div>

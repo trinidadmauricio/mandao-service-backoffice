@@ -2,6 +2,8 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface OrdersChartData {
   date: string;
@@ -21,12 +23,7 @@ export function OrdersChart({ data, isLoading }: OrdersChartProps) {
           <CardTitle>Órdenes por Período</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Cargando datos...</p>
-            </div>
-          </div>
+          <Skeleton className="h-[300px] w-full" />
         </CardContent>
       </Card>
     );
@@ -39,9 +36,11 @@ export function OrdersChart({ data, isLoading }: OrdersChartProps) {
           <CardTitle>Órdenes por Período</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
-          </div>
+          <EmptyState
+            variant="empty"
+            title="No hay datos disponibles"
+            description="No se encontraron órdenes para el período seleccionado."
+          />
         </CardContent>
       </Card>
     );
@@ -75,10 +74,11 @@ export function OrdersChart({ data, isLoading }: OrdersChartProps) {
             <Line
               type="monotone"
               dataKey="orders"
-              stroke="hsl(var(--primary))"
-              strokeWidth={2}
+              stroke="hsl(217, 91%, 60%)"
+              strokeWidth={3}
               name="Órdenes"
-              dot={{ r: 4 }}
+              dot={{ r: 5, fill: 'hsl(217, 91%, 60%)' }}
+              activeDot={{ r: 7 }}
             />
           </LineChart>
         </ResponsiveContainer>

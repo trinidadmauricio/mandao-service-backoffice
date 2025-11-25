@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import ProductsPage from '../page';
 import { useProducts, useDeleteProduct } from '@/lib/hooks/use-products';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -50,7 +50,7 @@ describe('ProductsPage', () => {
     ];
 
     mockUseProducts.mockReturnValue({
-      data: mockProducts as any,
+      data: { data: mockProducts, total: mockProducts.length },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useProducts>);
@@ -66,7 +66,7 @@ describe('ProductsPage', () => {
     mockUseDeleteProduct.mockReturnValue({
       mutateAsync: mockMutate,
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useDeleteProduct>);
 
     render(<ProductsPage />);
 

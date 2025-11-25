@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +10,21 @@ import { useLogisticsProviders } from '@/lib/hooks/use-logistics-providers';
 import { useDrivers } from '@/lib/hooks/use-drivers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
@@ -42,40 +57,91 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const isEditing = !!vehicleId;
   const { data: vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId || '');
   const { data: logisticsProviders } = useLogisticsProviders();
-  const { data: drivers } = useDrivers();
+  // Cargar todos los drivers disponibles para determinar qué proveedores tienen drivers disponibles
+  const { data: allDrivers } = useDrivers({ availability_status: 'AVAILABLE' });
   const createVehicle = useCreateVehicle();
   const updateVehicle = useUpdateVehicle();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<VehicleFormData>({
+  const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       status: 'AVAILABLE',
       vehicle_type: 'MOTORCYCLE',
+      logistics_provider_id: '',
+      driver_id: '',
+      license_plate: '',
+      brand: '',
+      model: '',
+      year: new Date().getFullYear(),
+      color: '',
+      insurance_policy: '',
+      insurance_expires_at: '',
+      last_maintenance_at: '',
+      specifications: {},
     },
   });
 
+  // Obtener el proveedor seleccionado del formulario
+  const selectedProviderId = form.watch('logistics_provider_id');
+  
+  // Cargar drivers filtrados por proveedor cuando se selecciona uno (solo disponibles)
+  const { data: filteredDrivers } = useDrivers(
+    selectedProviderId ? { logistics_provider_id: selectedProviderId, availability_status: 'AVAILABLE' } : undefined
+  );
+  
+  // Usar drivers filtrados si hay proveedor seleccionado, sino todos
+  const drivers = selectedProviderId ? filteredDrivers : allDrivers;
+
+  // Filtrar proveedores para mostrar solo los que tienen drivers disponibles
+  // El backend ya filtra por availability_status='AVAILABLE', así que todos los drivers aquí son disponibles
+  const providersWithDrivers = React.useMemo(() => {
+    if (!logisticsProviders || !allDrivers?.data) return [];
+    
+    // Obtener IDs de proveedores que tienen drivers disponibles
+    const providerIdsWithAvailableDrivers = new Set(
+      allDrivers.data
+        .map((driver) => driver.logistics_provider_id)
+        .filter((id): id is string => !!id)
+    );
+    
+    return logisticsProviders.filter((provider) => 
+      providerIdsWithAvailableDrivers.has(provider.id)
+    );
+  }, [logisticsProviders, allDrivers]);
+
+  // Limpiar driver seleccionado cuando cambia el proveedor
+  useEffect(() => {
+    if (selectedProviderId) {
+      // Verificar si el driver actual pertenece al proveedor seleccionado
+      const currentDriverId = form.getValues('driver_id');
+      if (currentDriverId) {
+        const currentDriver = allDrivers?.data?.find((d) => d.id === currentDriverId);
+        if (currentDriver && currentDriver.logistics_provider_id !== selectedProviderId) {
+          form.setValue('driver_id', '');
+        }
+      }
+    }
+  }, [selectedProviderId, form, allDrivers]);
+
   useEffect(() => {
     if (vehicle && isEditing) {
-      setValue('logistics_provider_id', vehicle.logistics_provider_id || '');
-      setValue('driver_id', vehicle.driver_id || '');
-      setValue('vehicle_type', vehicle.vehicle_type);
-      setValue('license_plate', vehicle.license_plate);
-      setValue('brand', vehicle.brand);
-      setValue('model', vehicle.model);
-      setValue('year', vehicle.year);
-      setValue('color', vehicle.color);
-      setValue('insurance_policy', vehicle.insurance_policy);
-      setValue('insurance_expires_at', vehicle.insurance_expires_at.split('T')[0]);
-      setValue('last_maintenance_at', vehicle.last_maintenance_at?.split('T')[0] || '');
-      setValue('status', vehicle.status);
-      setValue('specifications', vehicle.specifications || {});
+      form.reset({
+        logistics_provider_id: vehicle.logistics_provider_id || '',
+        driver_id: vehicle.driver_id || '',
+        vehicle_type: vehicle.vehicle_type,
+        license_plate: vehicle.license_plate,
+        brand: vehicle.brand,
+        model: vehicle.model,
+        year: vehicle.year,
+        color: vehicle.color,
+        insurance_policy: vehicle.insurance_policy,
+        insurance_expires_at: vehicle.insurance_expires_at.split('T')[0],
+        last_maintenance_at: vehicle.last_maintenance_at?.split('T')[0] || '',
+        status: vehicle.status,
+        specifications: vehicle.specifications || {},
+      });
     }
-  }, [vehicle, isEditing, setValue]);
+  }, [vehicle, isEditing, form]);
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
@@ -146,173 +212,270 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="vehicle_type">Tipo de Vehículo *</Label>
-              <select
-                id="vehicle_type"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('vehicle_type')}
-                disabled={isPending}
-              >
-                {Object.entries(vehicleTypeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              {errors.vehicle_type && (
-                <p className="text-sm text-destructive">{errors.vehicle_type.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="license_plate">Placa *</Label>
-              <Input id="license_plate" {...register('license_plate')} disabled={isPending} />
-              {errors.license_plate && (
-                <p className="text-sm text-destructive">{errors.license_plate.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="brand">Marca *</Label>
-              <Input id="brand" {...register('brand')} disabled={isPending} />
-              {errors.brand && (
-                <p className="text-sm text-destructive">{errors.brand.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="model">Modelo *</Label>
-              <Input id="model" {...register('model')} disabled={isPending} />
-              {errors.model && (
-                <p className="text-sm text-destructive">{errors.model.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="year">Año *</Label>
-              <Input
-                id="year"
-                type="number"
-                {...register('year', { valueAsNumber: true })}
-                disabled={isPending}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="vehicle_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Vehículo *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(vehicleTypeLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.year && (
-                <p className="text-sm text-destructive">{errors.year.message}</p>
-              )}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="color">Color *</Label>
-              <Input id="color" {...register('color')} disabled={isPending} />
-              {errors.color && (
-                <p className="text-sm text-destructive">{errors.color.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Estado *</Label>
-              <select
-                id="status"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('status')}
-                disabled={isPending}
-              >
-                <option value="AVAILABLE">Disponible</option>
-                <option value="IN_SERVICE">En Servicio</option>
-                <option value="MAINTENANCE">En Mantenimiento</option>
-                <option value="OUT_OF_SERVICE">Fuera de Servicio</option>
-              </select>
-              {errors.status && (
-                <p className="text-sm text-destructive">{errors.status.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="insurance_policy">Póliza de Seguro *</Label>
-              <Input id="insurance_policy" {...register('insurance_policy')} disabled={isPending} />
-              {errors.insurance_policy && (
-                <p className="text-sm text-destructive">{errors.insurance_policy.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="insurance_expires_at">Fecha de Expiración del Seguro *</Label>
-              <Input
-                id="insurance_expires_at"
-                type="date"
-                {...register('insurance_expires_at')}
-                disabled={isPending}
+              <FormField
+                control={form.control}
+                name="license_plate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Placa *</FormLabel>
+                    <FormControl>
+                      <Input disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.insurance_expires_at && (
-                <p className="text-sm text-destructive">{errors.insurance_expires_at.message}</p>
-              )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="last_maintenance_at">Última Mantención</Label>
-            <Input
-              id="last_maintenance_at"
-              type="date"
-              {...register('last_maintenance_at')}
-              disabled={isPending}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="brand"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Marca *</FormLabel>
+                    <FormControl>
+                      <Input disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Modelo *</FormLabel>
+                    <FormControl>
+                      <Input disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Año *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color *</FormLabel>
+                    <FormControl>
+                      <Input disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un estado" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="AVAILABLE">Disponible</SelectItem>
+                        <SelectItem value="IN_SERVICE">En Servicio</SelectItem>
+                        <SelectItem value="MAINTENANCE">En Mantenimiento</SelectItem>
+                        <SelectItem value="OUT_OF_SERVICE">Fuera de Servicio</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="insurance_policy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Póliza de Seguro *</FormLabel>
+                    <FormControl>
+                      <Input disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="insurance_expires_at"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fecha de Expiración del Seguro *</FormLabel>
+                    <FormControl>
+                      <Input type="date" disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="last_maintenance_at"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Última Mantención</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      disabled={isPending}
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="logistics_provider_id">Proveedor Logístico</Label>
-              <select
-                id="logistics_provider_id"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('logistics_provider_id')}
-                disabled={isPending}
-              >
-                <option value="">Sin proveedor</option>
-                {logisticsProviders?.map((provider) => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.company_name}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="logistics_provider_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Proveedor Logístico</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value || undefined)}
+                      value={field.value || undefined}
+                      disabled={isPending}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sin proveedor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {providersWithDrivers.map((provider) => (
+                          <SelectItem key={provider.id} value={provider.id}>
+                            {provider.company_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="driver_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Driver Asignado</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value || undefined)}
+                      value={field.value || undefined}
+                      disabled={isPending || !selectedProviderId || !drivers?.data?.length}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue 
+                            placeholder={
+                              !selectedProviderId 
+                                ? 'Selecciona un proveedor primero' 
+                                : !drivers?.data?.length 
+                                ? 'No hay drivers disponibles' 
+                                : 'Sin driver'
+                            } 
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.isArray(drivers?.data) && drivers.data.map((driver) => (
+                          <SelectItem key={driver.id} value={driver.id}>
+                            {driver.user?.first_name} {driver.user?.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="driver_id">Driver Asignado</Label>
-              <select
-                id="driver_id"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('driver_id')}
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
                 disabled={isPending}
               >
-                <option value="">Sin driver</option>
-                {drivers?.map((driver) => (
-                  <option key={driver.id} value={driver.id}>
-                    {driver.user?.first_name} {driver.user?.last_name}
-                  </option>
-                ))}
-              </select>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              </Button>
             </div>
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

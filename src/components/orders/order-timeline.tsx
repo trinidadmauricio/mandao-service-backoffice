@@ -2,7 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/date';
+import { formatCurrency } from '@/lib/utils/currency';
 import { Clock, Truck, MapPin, Package, DollarSign, RefreshCw } from 'lucide-react';
 
 interface OrderTimelineProps {
@@ -32,7 +34,7 @@ interface OrderTimelineProps {
     order_summary_totals?: Array<{
       id: string;
       version: number;
-      total_amount: number;
+      total_amount: number | string;
       currency: string;
       is_current: boolean;
       created_at: string;
@@ -120,10 +122,13 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
 
   // Agregar eventos de totales
   order.order_summary_totals?.forEach((total) => {
+    const totalAmount = typeof total.total_amount === 'string' 
+      ? parseFloat(total.total_amount) 
+      : total.total_amount;
     events.push({
       type: 'totals',
       title: `Totales recalculados (v${total.version})`,
-      description: `Total: ${total.currency} ${total.total_amount.toFixed(2)}`,
+      description: `Total: ${formatCurrency(totalAmount, total.currency)}`,
       date: total.created_at,
       icon: <DollarSign className="h-4 w-4" />,
     });
@@ -141,32 +146,60 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
     icon: <Clock className="h-4 w-4" />,
   });
 
+  const typeColors = {
+    status: 'text-primary',
+    driver: 'text-blue-600 dark:text-blue-400',
+    branch: 'text-purple-600 dark:text-purple-400',
+    items: 'text-orange-600 dark:text-orange-400',
+    totals: 'text-emerald-600 dark:text-emerald-400',
+  };
+
+  const typeBgColors = {
+    status: 'bg-primary/10',
+    driver: 'bg-blue-100 dark:bg-blue-900/30',
+    branch: 'bg-purple-100 dark:bg-purple-900/30',
+    items: 'bg-orange-100 dark:bg-orange-900/30',
+    totals: 'bg-emerald-100 dark:bg-emerald-900/30',
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Historial de la Orden</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {events.map((event, index) => (
-            <div key={index} className="flex items-start space-x-4">
-              <div className="flex-shrink-0 mt-1">{event.icon}</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{event.title}</p>
+            <div key={index} className="flex items-start space-x-4 relative">
+              {index < events.length - 1 && (
+                <div className="absolute left-6 top-10 w-0.5 h-full bg-border" />
+              )}
+              <div
+                className={cn(
+                  'flex-shrink-0 p-2 rounded-full',
+                  typeBgColors[event.type]
+                )}
+              >
+                <div className={cn('h-5 w-5', typeColors[event.type])}>
+                  {event.icon}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 pb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-semibold">{event.title}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(event.date)}</p>
                 </div>
                 {event.description && (
-                  <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
+                  <p className="text-xs text-muted-foreground mb-2">{event.description}</p>
                 )}
-                <Badge variant="outline" className="mt-2 text-xs">
+                <Badge variant="outline" className="text-xs">
                   {event.type}
                 </Badge>
               </div>
             </div>
           ))}
           {events.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-sm text-muted-foreground text-center py-8">
               No hay historial disponible para esta orden
             </p>
           )}

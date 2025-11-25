@@ -21,7 +21,7 @@ interface StockManagerProps {
 }
 
 export function StockManager({
-  variantId,
+  variantId: _variantId,
   currentStock = 0,
   stockByBranch = [],
   onStockUpdate,

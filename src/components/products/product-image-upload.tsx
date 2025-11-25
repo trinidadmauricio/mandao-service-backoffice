@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,12 @@ interface ProductImageUploadProps {
 
 export function ProductImageUpload({ imageUrl, onImageChange, disabled }: ProductImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(imageUrl || null);
+
+  useEffect(() => {
+    if (imageUrl !== undefined) {
+      setPreview(imageUrl || null);
+    }
+  }, [imageUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

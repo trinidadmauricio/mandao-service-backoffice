@@ -5,6 +5,8 @@ import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -13,14 +15,22 @@ export default function DeliveryZonesPage() {
   const { data: zones, isLoading, error } = useDeliveryZones();
   const deleteZone = useDeleteDeliveryZone();
   const { hasPermission } = usePermissions();
+  const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta zona de entrega?')) {
-      try {
-        await deleteZone.mutateAsync(id);
-      } catch (error) {
-        console.error('Error deleting zone:', error);
-      }
+    try {
+      await deleteZone.mutateAsync(id);
+      toast({
+        title: 'Zona eliminada',
+        description: 'La zona de entrega ha sido eliminada exitosamente.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar la zona de entrega. Por favor, intenta nuevamente.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -113,15 +123,24 @@ export default function DeliveryZonesPage() {
                           </Link>
                         )}
                         {hasPermission('delivery-zones', 'delete') && (
-                          <Button
+                          <ConfirmDialog
+                            trigger={
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={deleteZone.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Eliminar
+                              </Button>
+                            }
+                            title="Eliminar Zona de Entrega"
+                            description={`¿Estás seguro de que quieres eliminar la zona "${zone.name}"? Esta acción no se puede deshacer.`}
+                            confirmLabel="Eliminar"
+                            cancelLabel="Cancelar"
                             variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(zone.id)}
-                            disabled={deleteZone.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
-                          </Button>
+                            onConfirm={() => handleDelete(zone.id)}
+                          />
                         )}
                       </div>
                     </div>

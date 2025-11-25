@@ -2,6 +2,8 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface TopProductsData {
   product_name: string;
@@ -22,12 +24,7 @@ export function TopProductsChart({ data, isLoading }: TopProductsChartProps) {
           <CardTitle>Top Productos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Cargando datos...</p>
-            </div>
-          </div>
+          <Skeleton className="h-[300px] w-full" />
         </CardContent>
       </Card>
     );
@@ -40,9 +37,11 @@ export function TopProductsChart({ data, isLoading }: TopProductsChartProps) {
           <CardTitle>Top Productos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
-          </div>
+          <EmptyState
+            variant="empty"
+            title="No hay datos disponibles"
+            description="No se encontraron productos vendidos para el período seleccionado."
+          />
         </CardContent>
       </Card>
     );
@@ -77,9 +76,9 @@ export function TopProductsChart({ data, isLoading }: TopProductsChartProps) {
             <Legend />
             <Bar
               dataKey="quantity"
-              fill="hsl(var(--primary))"
+              fill="hsl(262, 83%, 58%)"
               name="Cantidad Vendida"
-              radius={[0, 4, 4, 0]}
+              radius={[0, 6, 6, 0]}
             />
           </BarChart>
         </ResponsiveContainer>

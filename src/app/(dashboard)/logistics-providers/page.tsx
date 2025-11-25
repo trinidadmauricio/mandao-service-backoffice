@@ -6,6 +6,7 @@ import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Plus, Eye, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils/date';
@@ -27,11 +28,7 @@ export default function LogisticsProvidersPage() {
   const deleteProvider = useDeleteLogisticsProvider();
   const { toast } = useToast();
 
-  const handleDelete = async (id: string, companyName: string) => {
-    if (!confirm(`¿Estás seguro de eliminar el proveedor "${companyName}"?`)) {
-      return;
-    }
-
+  const handleDelete = async (id: string) => {
     try {
       await deleteProvider.mutateAsync(id);
       toast({
@@ -194,15 +191,24 @@ export default function LogisticsProvidersPage() {
                             />
                           </DialogContent>
                         </Dialog>
-                        <Button
+                        <ConfirmDialog
+                          trigger={
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={deleteProvider.isPending}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar
+                            </Button>
+                          }
+                          title="Eliminar Proveedor"
+                          description={`¿Estás seguro de que quieres eliminar el proveedor "${provider.company_name}"? Esta acción no se puede deshacer.`}
+                          confirmLabel="Eliminar"
+                          cancelLabel="Cancelar"
                           variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(provider.id, provider.company_name)}
-                          disabled={deleteProvider.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Eliminar
-                        </Button>
+                          onConfirm={() => handleDelete(provider.id)}
+                        />
                       </div>
                     </div>
                   ))}

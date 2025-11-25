@@ -2,6 +2,8 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface StatusDistributionData {
   status: string;
@@ -14,12 +16,14 @@ interface StatusDistributionChartProps {
 }
 
 const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--secondary))',
-  'hsl(var(--accent))',
-  'hsl(var(--muted))',
-  'hsl(var(--destructive))',
-  'hsl(var(--ring))',
+  'hsl(217, 91%, 60%)', // Primary blue
+  'hsl(142, 76%, 36%)', // Success green
+  'hsl(38, 92%, 50%)', // Warning amber
+  'hsl(188, 94%, 43%)', // Info cyan
+  'hsl(0, 84%, 60%)', // Destructive red
+  'hsl(262, 83%, 58%)', // Purple
+  'hsl(24, 95%, 53%)', // Orange
+  'hsl(280, 100%, 70%)', // Pink
 ];
 
 const statusLabels: Record<string, string> = {
@@ -41,12 +45,7 @@ export function StatusDistributionChart({ data, isLoading }: StatusDistributionC
           <CardTitle>Órdenes por Estado</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Cargando datos...</p>
-            </div>
-          </div>
+          <Skeleton className="h-[300px] w-full rounded-full" />
         </CardContent>
       </Card>
     );
@@ -59,9 +58,11 @@ export function StatusDistributionChart({ data, isLoading }: StatusDistributionC
           <CardTitle>Órdenes por Estado</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
-          </div>
+          <EmptyState
+            variant="empty"
+            title="No hay datos disponibles"
+            description="No se encontraron órdenes para mostrar la distribución."
+          />
         </CardContent>
       </Card>
     );

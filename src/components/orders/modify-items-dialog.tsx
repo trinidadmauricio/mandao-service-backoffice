@@ -25,9 +25,11 @@ interface ModifyItemsDialogProps {
     unit_price: number;
     notes?: string;
   }>;
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+  buttonClassName?: string;
 }
 
-export function ModifyItemsDialog({ orderId, currentItems = [] }: ModifyItemsDialogProps) {
+export function ModifyItemsDialog({ orderId, currentItems = [], buttonSize = 'default', buttonClassName }: ModifyItemsDialogProps) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState(
     currentItems.length > 0
@@ -122,7 +124,7 @@ export function ModifyItemsDialog({ orderId, currentItems = [] }: ModifyItemsDia
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" size={buttonSize} className={buttonClassName}>
           <Package className="h-4 w-4 mr-2" />
           Modificar Items
         </Button>

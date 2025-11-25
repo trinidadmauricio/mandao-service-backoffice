@@ -2,9 +2,22 @@
 
 import { useFormContext } from 'react-hook-form';
 import { useProductVariants } from '@/lib/hooks/use-product-variants';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Trash2 } from 'lucide-react';
 import type { RetailOrderFormData } from './retail-order-form';
 
@@ -15,10 +28,6 @@ interface RetailOrderItemFieldProps {
   onRemove: () => void;
   canRemove: boolean;
   isPending: boolean;
-  errors: {
-    product_id?: { message?: string };
-    quantity?: { message?: string };
-  };
 }
 
 export function RetailOrderItemField({
@@ -28,9 +37,8 @@ export function RetailOrderItemField({
   onRemove,
   canRemove,
   isPending,
-  errors,
 }: RetailOrderItemFieldProps) {
-  const { register } = useFormContext<RetailOrderFormData>();
+  const { control } = useFormContext<RetailOrderFormData>();
   const { data: variants } = useProductVariants(
     productId ? { product_id: productId } : undefined
   );
@@ -52,53 +60,83 @@ export function RetailOrderItemField({
         )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label>Producto *</Label>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            {...register(`items.${index}.product_id`)}
-            disabled={isPending}
-          >
-            <option value="">Selecciona un producto</option>
-            {products?.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name}
-              </option>
-            ))}
-          </select>
-          {errors.product_id && (
-            <p className="text-sm text-destructive">{errors.product_id.message}</p>
+        <FormField
+          control={control}
+          name={`items.${index}.product_id`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Producto *</FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(value || undefined)}
+                value={field.value || undefined}
+                disabled={isPending}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un producto" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {Array.isArray(products) && products.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
+        />
         {productId && variants && variants.length > 0 && (
-          <div className="space-y-2">
-            <Label>Variante (Opcional)</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              {...register(`items.${index}.variant_id`)}
-              disabled={isPending}
-            >
-              <option value="">Sin variante</option>
-              {variants.map((variant) => (
-                <option key={variant.id} value={variant.id}>
-                  {variant.option1_value || variant.sku}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <div className="space-y-2">
-          <Label>Cantidad *</Label>
-          <Input
-            type="number"
-            min="1"
-            {...register(`items.${index}.quantity`, { valueAsNumber: true })}
-            disabled={isPending}
+          <FormField
+            control={control}
+            name={`items.${index}.variant_id`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Variante (Opcional)</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(value || undefined)}
+                  value={field.value || undefined}
+                  disabled={isPending}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sin variante" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {variants.map((variant) => (
+                      <SelectItem key={variant.id} value={variant.id}>
+                        {variant.option1_value || variant.sku}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.quantity && (
-            <p className="text-sm text-destructive">{errors.quantity.message}</p>
+        )}
+        <FormField
+          control={control}
+          name={`items.${index}.quantity`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cantidad *</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="1"
+                  disabled={isPending}
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
+        />
       </div>
     </div>
   );

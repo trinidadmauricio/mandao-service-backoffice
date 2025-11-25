@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import UsersPage from '../page';
 import { useUsers, useDeleteUser } from '@/lib/hooks/use-users';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -84,7 +83,7 @@ describe('UsersPage', () => {
     ];
 
     mockUseUsers.mockReturnValue({
-      data: mockUsers as any,
+      data: { data: mockUsers, total: mockUsers.length },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useUsers>);
@@ -100,7 +99,7 @@ describe('UsersPage', () => {
     mockUseDeleteUser.mockReturnValue({
       mutateAsync: mockMutate,
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useDeleteUser>);
 
     render(<UsersPage />);
 

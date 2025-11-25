@@ -1,8 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import SettingsPage from '../page';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useTenant, useUpdateTenant } from '@/lib/hooks/use-tenant';
+import type { User } from '@/types/api';
 
 // Mock hooks
 jest.mock('@/lib/hooks/use-auth');
@@ -19,7 +19,7 @@ describe('SettingsPage', () => {
 
   it('should render loading state', () => {
     mockUseAuth.mockReturnValue({
-      user: { id: '1', tenant_id: 'tenant-1', role: 'OWNER' } as any,
+      user: { id: '1', tenant_id: 'tenant-1', role: 'OWNER', email: 'test@test.com', first_name: 'Test', last_name: 'User', email_verified: true } as User,
       isAuthenticated: true,
       isLoading: false,
       role: 'OWNER',
@@ -48,7 +48,7 @@ describe('SettingsPage', () => {
     };
 
     mockUseAuth.mockReturnValue({
-      user: { id: '1', tenant_id: 'tenant-1', role: 'OWNER' } as any,
+      user: { id: '1', tenant_id: 'tenant-1', role: 'OWNER', email: 'test@test.com', first_name: 'Test', last_name: 'User', email_verified: true } as User,
       isAuthenticated: true,
       isLoading: false,
       role: 'OWNER',
@@ -58,7 +58,7 @@ describe('SettingsPage', () => {
     });
 
     mockUseTenant.mockReturnValue({
-      data: mockTenant as any,
+      data: mockTenant,
       isLoading: false,
       error: null,
     } as ReturnType<typeof useTenant>);
@@ -67,7 +67,7 @@ describe('SettingsPage', () => {
     mockUseUpdateTenant.mockReturnValue({
       mutateAsync: mockMutate,
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useUpdateTenant>);
 
     render(<SettingsPage />);
 
@@ -78,7 +78,7 @@ describe('SettingsPage', () => {
 
   it('should not render for non-OWNER users', () => {
     mockUseAuth.mockReturnValue({
-      user: { id: '1', tenant_id: 'tenant-1', role: 'SUPERVISOR' } as any,
+      user: { id: '1', tenant_id: 'tenant-1', role: 'SUPERVISOR', email: 'test@test.com', first_name: 'Test', last_name: 'User', email_verified: true } as User,
       isAuthenticated: true,
       isLoading: false,
       role: 'SUPERVISOR',

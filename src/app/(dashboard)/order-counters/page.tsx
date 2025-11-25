@@ -1,6 +1,6 @@
 'use client';
 
-import { useTenant } from '@/lib/hooks/use-tenant';
+import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { useOrderCounter } from '@/lib/hooks/use-order-counters';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,8 @@ import { IncrementCounterButton } from '@/components/order-counters/increment-co
 import { Hash, Settings } from 'lucide-react';
 
 export default function OrderCountersPage() {
-  const { data: tenant } = useTenant();
-  const tenantId = tenant?.id || '';
+  const { tenant } = useTenant();
+  const tenantId = (tenant as Tenant | null)?.id || '';
   const { data: counter, isLoading, error } = useOrderCounter(tenantId);
 
   if (isLoading) {

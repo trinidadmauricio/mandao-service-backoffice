@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RoleBadge } from '@/components/users/role-badge';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { Edit, Trash2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -20,15 +22,23 @@ export default function UserDetailPage() {
   const { data: user, isLoading, error } = useUser(userId);
   const deleteUser = useDeleteUser();
   const { hasPermission } = usePermissions();
+  const { toast } = useToast();
 
   const handleDelete = async () => {
-    if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-      try {
-        await deleteUser.mutateAsync(userId);
-        router.push('/users');
-      } catch (error) {
-        console.error('Error deleting user:', error);
-      }
+    try {
+      await deleteUser.mutateAsync(userId);
+      toast({
+        title: 'Usuario eliminado',
+        description: 'El usuario ha sido eliminado exitosamente.',
+      });
+      router.push('/users');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el usuario. Por favor, intenta nuevamente.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -95,10 +105,22 @@ export default function UserDetailPage() {
             </Link>
           )}
           {hasPermission('users', 'delete') && (
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteUser.isPending}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar
-            </Button>
+            {user && (
+              <ConfirmDialog
+                trigger={
+                  <Button variant="destructive" disabled={deleteUser.isPending}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
+                }
+                title="Eliminar Usuario"
+                description={`¿Estás seguro de que quieres eliminar el usuario "${user.first_name} ${user.last_name}"? Esta acción no se puede deshacer.`}
+                confirmLabel="Eliminar"
+                cancelLabel="Cancelar"
+                variant="destructive"
+                onConfirm={handleDelete}
+              />
+            )}
           )}
         </div>
       </div>

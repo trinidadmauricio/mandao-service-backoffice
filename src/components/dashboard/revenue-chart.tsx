@@ -2,6 +2,8 @@
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/lib/utils/currency';
 
@@ -24,12 +26,7 @@ export function RevenueChart({ data, isLoading, currency = 'USD' }: RevenueChart
           <CardTitle>Revenue por Período</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Cargando datos...</p>
-            </div>
-          </div>
+          <Skeleton className="h-[300px] w-full" />
         </CardContent>
       </Card>
     );
@@ -42,9 +39,11 @@ export function RevenueChart({ data, isLoading, currency = 'USD' }: RevenueChart
           <CardTitle>Revenue por Período</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
-          </div>
+          <EmptyState
+            variant="empty"
+            title="No hay datos disponibles"
+            description="No se encontró revenue para el período seleccionado."
+          />
         </CardContent>
       </Card>
     );
@@ -62,8 +61,8 @@ export function RevenueChart({ data, isLoading, currency = 'USD' }: RevenueChart
           <AreaChart data={data}>
             <defs>
               <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" />
@@ -87,7 +86,8 @@ export function RevenueChart({ data, isLoading, currency = 'USD' }: RevenueChart
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke="hsl(var(--primary))"
+              stroke="hsl(142, 76%, 36%)"
+              strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorRevenue)"
               name="Revenue"

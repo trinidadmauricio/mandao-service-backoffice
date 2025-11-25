@@ -4,7 +4,6 @@ import {
   getAllowedActions,
   ROLE_PERMISSIONS,
 } from '../roles';
-import type { UserRole } from '../roles';
 
 describe('Roles and Permissions', () => {
   describe('hasPermission', () => {

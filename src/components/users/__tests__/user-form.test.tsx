@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { User } from '@/types/api';
 import { UserForm } from '../user-form';
 import { useCreateUser, useUpdateUser, useUser } from '@/lib/hooks/use-users';
 
@@ -25,13 +26,13 @@ describe('UserForm', () => {
     mockUseCreateUser.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useCreateUser>);
 
     mockUseUser.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useUser>);
 
     render(<UserForm />);
 
@@ -56,15 +57,15 @@ describe('UserForm', () => {
     };
 
     mockUseUser.mockReturnValue({
-      data: mockUser as any,
+      data: mockUser as User,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useUser>);
 
     mockUseUpdateUser.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useUpdateUser>);
 
     render(<UserForm userId="1" />);
 
@@ -78,13 +79,13 @@ describe('UserForm', () => {
     mockUseCreateUser.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useCreateUser>);
 
     mockUseUser.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useUser>);
 
     render(<UserForm />);
 
@@ -111,15 +112,15 @@ describe('UserForm', () => {
     };
 
     mockUseUser.mockReturnValue({
-      data: mockUser as any,
+      data: mockUser as User,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useUser>);
 
     mockUseUpdateUser.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useUpdateUser>);
 
     render(<UserForm userId="1" />);
 

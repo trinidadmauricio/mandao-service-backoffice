@@ -3,12 +3,41 @@ import { apiClient } from '../api/client';
 import { endpoints } from '../api/endpoints';
 import type { Driver } from '@/types/api';
 
-export function useDrivers() {
+export interface DriversFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  logistics_provider_id?: string;
+  availability_status?: 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'SUSPENDED';
+}
+
+export interface DriversResponse {
+  data: Driver[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export function useDrivers(filters?: DriversFilters) {
   return useQuery({
-    queryKey: ['drivers'],
+    queryKey: ['drivers', filters],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: Driver[] }>(endpoints.drivers.list);
-      return response.data.data;
+      const response = await apiClient.get<{ status: string; data: Driver[] }>(
+        endpoints.drivers.list,
+        {
+          params: filters,
+        }
+      );
+      // El backend devuelve { status: 'success', data: [...] }
+      const drivers = response.data.data || [];
+      return {
+        data: drivers,
+        total: drivers.length,
+        page: 1,
+        limit: drivers.length,
+        totalPages: 1,
+      } as DriversResponse;
     },
   });
 }

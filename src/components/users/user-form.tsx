@@ -7,19 +7,41 @@ import { z } from 'zod';
 import { useCreateUser, useUpdateUser, useUser } from '@/lib/hooks/use-users';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import type { UserRole } from '@/lib/constants/roles';
+import { useToast } from '@/components/ui/use-toast';
 
-const userSchema = z.object({
-  email: z.string().email('Email inválido'),
-  first_name: z.string().min(1, 'El nombre es requerido'),
-  last_name: z.string().min(1, 'El apellido es requerido'),
-  phone: z.string().optional(),
-  role: z.enum(['OWNER', 'SUPERVISOR', 'MERCHANT_USER', 'CUSTOMER']),
-  active: z.boolean().default(true),
-});
+const userSchema = z
+  .object({
+    email: z.string().email('Email inválido'),
+    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').optional(),
+    first_name: z.string().min(1, 'El nombre es requerido'),
+    last_name: z.string().min(1, 'El apellido es requerido'),
+    phone: z.string().optional(),
+    role: z.enum(['SAAS_ADMIN', 'SAAS_EDITOR', 'OWNER', 'SUPERVISOR', 'MERCHANT_USER', 'CUSTOMER']),
+    status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).default('ACTIVE'),
+  })
+  .refine(() => {
+    // Password es requerido solo al crear (no al editar)
+    // Esta validación se manejará en el componente
+    return true;
+  });
 
 type UserFormData = z.infer<typeof userSchema>;
 
@@ -29,49 +51,83 @@ interface UserFormProps {
 
 export function UserForm({ userId }: UserFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const isEditing = !!userId;
   const { data: user, isLoading: isLoadingUser } = useUser(userId || '');
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<UserFormData>({
+  const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      active: true,
+      status: 'ACTIVE',
       role: 'MERCHANT_USER',
+      email: '',
+      password: '',
+      first_name: '',
+      last_name: '',
+      phone: '',
     },
   });
 
   // Cargar datos del usuario si está editando
   useEffect(() => {
     if (user && isEditing) {
-      setValue('email', user.email);
-      setValue('first_name', user.first_name);
-      setValue('last_name', user.last_name);
-      setValue('phone', user.phone || '');
-      setValue('role', user.role);
-      setValue('active', user.active);
+      form.reset({
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user.phone || '',
+        role: user.role,
+        status: (user.status as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED') || 'ACTIVE',
+        password: '', // No cargar password al editar
+      });
     }
-  }, [user, isEditing, setValue]);
+  }, [user, isEditing, form]);
 
   const onSubmit = async (data: UserFormData) => {
     try {
+      // Validar password al crear
+      if (!isEditing && !data.password) {
+        toast({
+          title: 'Error de validación',
+          description: 'La contraseña es requerida para crear un nuevo usuario.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const submitData = {
+        ...data,
+        // Solo incluir password si está presente (para crear o actualizar)
+        password: data.password || undefined,
+        // No enviar password vacío al actualizar si no se proporciona
+        ...(isEditing && !data.password && { password: undefined }),
+      };
+
       if (isEditing && userId) {
         await updateUser.mutateAsync({
           id: userId,
-          data,
+          data: submitData,
+        });
+        toast({
+          title: 'Usuario actualizado',
+          description: 'El usuario ha sido actualizado exitosamente.',
         });
       } else {
-        await createUser.mutateAsync(data);
+        await createUser.mutateAsync(submitData);
+        toast({
+          title: 'Usuario creado',
+          description: 'El usuario ha sido creado exitosamente.',
+        });
       }
       router.push('/users');
-    } catch (error) {
-      console.error('Error saving user:', error);
+    } catch (error: unknown) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Hubo un error al guardar el usuario.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -99,104 +155,171 @@ export function UserForm({ userId }: UserFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">Nombre *</Label>
-              <Input
-                id="first_name"
-                {...register('first_name')}
-                disabled={isPending}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre *</FormLabel>
+                    <FormControl>
+                      <Input disabled={isPending} autoFocus={!isEditing} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.first_name && (
-                <p className="text-sm text-destructive">{errors.first_name.message}</p>
-              )}
+
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Apellido *</FormLabel>
+                    <FormControl>
+                      <Input disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Apellido *</Label>
-              <Input
-                id="last_name"
-                {...register('last_name')}
-                disabled={isPending}
-              />
-              {errors.last_name && (
-                <p className="text-sm text-destructive">{errors.last_name.message}</p>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email *</FormLabel>
+                  <FormControl>
+                    <Input type="email" disabled={isPending || isEditing} {...field} />
+                  </FormControl>
+                  {isEditing && (
+                    <FormDescription>El email no se puede modificar</FormDescription>
+                  )}
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              {...register('email')}
-              disabled={isPending || isEditing}
             />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
+
+            {!isEditing && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña *</FormLabel>
+                    <FormControl>
+                      <Input type="password" disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormDescription>Mínimo 8 caracteres</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
+
             {isEditing && (
-              <p className="text-xs text-muted-foreground">
-                El email no se puede modificar
-              </p>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nueva Contraseña (opcional)</FormLabel>
+                    <FormControl>
+                      <Input type="password" disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Deja en blanco si no deseas cambiar la contraseña
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Teléfono (opcional)</Label>
-            <Input
-              id="phone"
-              type="tel"
-              {...register('phone')}
-              disabled={isPending}
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Teléfono (opcional)</FormLabel>
+                  <FormControl>
+                    <Input type="tel" disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.phone && (
-              <p className="text-sm text-destructive">{errors.phone.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="role">Rol *</Label>
-            <select
-              id="role"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              {...register('role')}
-              disabled={isPending}
-            >
-              <option value="MERCHANT_USER">Usuario</option>
-              <option value="SUPERVISOR">Supervisor</option>
-              <option value="OWNER">Propietario</option>
-              <option value="CUSTOMER">Cliente</option>
-            </select>
-            {errors.role && (
-              <p className="text-sm text-destructive">{errors.role.message}</p>
-            )}
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rol *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un rol" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
+                        <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                        <SelectItem value="OWNER">Propietario</SelectItem>
+                        <SelectItem value="CUSTOMER">Cliente</SelectItem>
+                        <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
+                        <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="active"
-              {...register('active')}
-              disabled={isPending}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <Label htmlFor="active" className="cursor-pointer">
-              Usuario activo
-            </Label>
-          </div>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un estado" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Activo</SelectItem>
+                        <SelectItem value="INACTIVE">Inactivo</SelectItem>
+                        <SelectItem value="SUSPENDED">Suspendido</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

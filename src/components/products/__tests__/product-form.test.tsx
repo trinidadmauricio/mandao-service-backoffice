@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProductForm } from '../product-form';
-import { useCreateProduct, useUpdateProduct, useProduct } from '@/lib/hooks/use-products';
+import { useCreateProduct, useProduct } from '@/lib/hooks/use-products';
 import { useCategories } from '@/lib/hooks/use-categories';
 import { useBrands } from '@/lib/hooks/use-brands';
 
@@ -17,7 +17,6 @@ jest.mock('next/navigation', () => ({
 }));
 
 const mockUseCreateProduct = useCreateProduct as jest.MockedFunction<typeof useCreateProduct>;
-const mockUseUpdateProduct = useUpdateProduct as jest.MockedFunction<typeof useUpdateProduct>;
 const mockUseProduct = useProduct as jest.MockedFunction<typeof useProduct>;
 const mockUseCategories = useCategories as jest.MockedFunction<typeof useCategories>;
 const mockUseBrands = useBrands as jest.MockedFunction<typeof useBrands>;
@@ -31,25 +30,25 @@ describe('ProductForm', () => {
     mockUseCreateProduct.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useCreateProduct>);
 
     mockUseProduct.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useProduct>);
 
     mockUseCategories.mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useCategories>);
 
     mockUseBrands.mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useBrands>);
 
     render(<ProductForm />);
 
@@ -62,25 +61,25 @@ describe('ProductForm', () => {
     mockUseCreateProduct.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useCreateProduct>);
 
     mockUseProduct.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useProduct>);
 
     mockUseCategories.mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useCategories>);
 
     mockUseBrands.mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useBrands>);
 
     render(<ProductForm />);
 

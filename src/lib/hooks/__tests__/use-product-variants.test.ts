@@ -1,6 +1,7 @@
+import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useProductVariants, useCreateProductVariant } from '../use-product-variants';
+import { useProductVariants } from '../use-product-variants';
 import { apiClient } from '@/lib/api/client';
 
 // Mock apiClient
@@ -14,9 +15,9 @@ const createWrapper = () => {
       },
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
+  };
 };
 
 describe('useProductVariants', () => {

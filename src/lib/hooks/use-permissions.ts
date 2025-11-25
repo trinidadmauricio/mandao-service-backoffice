@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAuth } from './use-auth';
-import { hasPermission, canAccessResource, getAllowedActions, type UserRole } from '../constants/roles';
+import { hasPermission, canAccessResource, getAllowedActions } from '../constants/roles';
 import type { Permission } from '../constants/roles';
 
 export function usePermissions() {

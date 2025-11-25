@@ -1,7 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import { DriverForm } from '../driver-form';
-import { useCreateDriver, useUpdateDriver, useDriver } from '@/lib/hooks/use-drivers';
+import { useCreateDriver, useDriver } from '@/lib/hooks/use-drivers';
 import { useLogisticsProviders } from '@/lib/hooks/use-logistics-providers';
 import { useUsers } from '@/lib/hooks/use-users';
 import { useVehicles } from '@/lib/hooks/use-vehicles';
@@ -24,7 +23,6 @@ jest.mock('@/components/ui/use-toast', () => ({
 }));
 
 const mockUseCreateDriver = useCreateDriver as jest.MockedFunction<typeof useCreateDriver>;
-const mockUseUpdateDriver = useUpdateDriver as jest.MockedFunction<typeof useUpdateDriver>;
 const mockUseDriver = useDriver as jest.MockedFunction<typeof useDriver>;
 const mockUseLogisticsProviders = useLogisticsProviders as jest.MockedFunction<typeof useLogisticsProviders>;
 const mockUseUsers = useUsers as jest.MockedFunction<typeof useUsers>;
@@ -39,31 +37,31 @@ describe('DriverForm', () => {
     mockUseCreateDriver.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useCreateDriver>);
 
     mockUseDriver.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useDriver>);
 
     mockUseLogisticsProviders.mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useLogisticsProviders>);
 
     mockUseUsers.mockReturnValue({
-      data: [],
+      data: { data: [], total: 0 },
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useUsers>);
 
     mockUseVehicles.mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof useVehicles>);
 
     render(<DriverForm />);
 

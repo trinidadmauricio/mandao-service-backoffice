@@ -5,6 +5,8 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,14 +14,22 @@ export default function BrandsPage() {
   const { data: brands, isLoading, error } = useBrands();
   const deleteBrand = useDeleteBrand();
   const { hasPermission } = usePermissions();
+  const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta marca?')) {
-      try {
-        await deleteBrand.mutateAsync(id);
-      } catch (error) {
-        console.error('Error deleting brand:', error);
-      }
+    try {
+      await deleteBrand.mutateAsync(id);
+      toast({
+        title: 'Marca eliminada',
+        description: 'La marca ha sido eliminada exitosamente.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar la marca. Por favor, intenta nuevamente.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -118,15 +128,24 @@ export default function BrandsPage() {
                       </Link>
                     )}
                     {hasPermission('products', 'delete') && (
-                      <Button
+                      <ConfirmDialog
+                        trigger={
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={deleteBrand.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </Button>
+                        }
+                        title="Eliminar Marca"
+                        description={`¿Estás seguro de que quieres eliminar la marca "${brand.name}"? Esta acción no se puede deshacer.`}
+                        confirmLabel="Eliminar"
+                        cancelLabel="Cancelar"
                         variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(brand.id)}
-                        disabled={deleteBrand.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
-                      </Button>
+                        onConfirm={() => handleDelete(brand.id)}
+                      />
                     )}
                   </div>
                 </div>

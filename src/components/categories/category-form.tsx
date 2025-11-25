@@ -8,14 +8,36 @@ import { useCreateCategory, useUpdateCategory, useCategory } from '@/lib/hooks/u
 import { useCategories } from '@/lib/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
+import { generateSlug } from '@/lib/utils/slug';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
+  slug: z.string().min(1, 'El slug es requerido'),
   description: z.string().optional(),
   parent_id: z.string().uuid().optional().or(z.literal('')),
+  image_url: z.string().url().optional().or(z.literal('')),
+  display_order: z.number().int().min(0).optional(),
+  is_active: z.boolean().optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -26,34 +48,57 @@ interface CategoryFormProps {
 
 export function CategoryForm({ categoryId }: CategoryFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const isEditing = !!categoryId;
   const { data: category, isLoading: isLoadingCategory } = useCategory(categoryId || '');
   const { data: categories } = useCategories();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<CategoryFormData>({
+  const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
+    defaultValues: {
+      name: '',
+      slug: '',
+      description: '',
+      parent_id: '',
+      image_url: '',
+      display_order: 0,
+      is_active: true,
+    },
   });
+
+  // Generar slug automáticamente desde el nombre
+  const nameValue = form.watch('name');
+  useEffect(() => {
+    if (!isEditing && nameValue) {
+      const autoSlug = generateSlug(nameValue);
+      form.setValue('slug', autoSlug, { shouldValidate: false });
+    }
+  }, [nameValue, isEditing, form]);
 
   useEffect(() => {
     if (category && isEditing) {
-      setValue('name', category.name);
-      setValue('description', category.description || '');
-      setValue('parent_id', category.parent_id || '');
+      form.reset({
+        name: category.name,
+        slug: category.slug || '',
+        description: category.description || '',
+        parent_id: category.parent_id || '',
+        image_url: category.image_url || '',
+        display_order: category.display_order || 0,
+        is_active: category.is_active ?? true,
+      });
     }
-  }, [category, isEditing, setValue]);
+  }, [category, isEditing, form]);
 
   const onSubmit = async (data: CategoryFormData) => {
     try {
       const submitData = {
         ...data,
         parent_id: data.parent_id || undefined,
+        image_url: data.image_url || undefined,
+        display_order: data.display_order || undefined,
+        is_active: data.is_active ?? true,
       };
 
       if (isEditing && categoryId) {
@@ -61,12 +106,24 @@ export function CategoryForm({ categoryId }: CategoryFormProps) {
           id: categoryId,
           data: submitData,
         });
+        toast({
+          title: 'Categoría actualizada',
+          description: 'La categoría ha sido actualizada exitosamente.',
+        });
       } else {
         await createCategory.mutateAsync(submitData);
+        toast({
+          title: 'Categoría creada',
+          description: 'La categoría ha sido creada exitosamente.',
+        });
       }
       router.push('/categories');
-    } catch (error) {
-      console.error('Error saving category:', error);
+    } catch (error: unknown) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Hubo un error al guardar la categoría.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -95,51 +152,105 @@ export function CategoryForm({ categoryId }: CategoryFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre *</Label>
-            <Input id="name" {...register('name')} disabled={isPending} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <textarea
-              id="description"
-              {...register('description')}
-              disabled={isPending}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre *</FormLabel>
+                  <FormControl>
+                    <Input disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="parent_id">Categoría Padre (opcional)</Label>
-            <select
-              id="parent_id"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              {...register('parent_id')}
-              disabled={isPending}
-            >
-              <option value="">Sin categoría padre</option>
-              {availableParents.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slug *</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isPending}
+                      {...field}
+                      placeholder="electronica"
+                      onChange={(e) => {
+                        const slug = generateSlug(e.target.value);
+                        field.onChange(slug);
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    URL amigable (se genera automáticamente desde el nombre)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción</FormLabel>
+                  <FormControl>
+                    <Textarea disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="parent_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoría Padre (opcional)</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(value || undefined)}
+                    value={field.value || undefined}
+                    disabled={isPending}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin categoría padre" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableParents.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

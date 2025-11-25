@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateRetailOrder } from '@/lib/hooks/use-orders';
@@ -9,7 +9,21 @@ import { useBranches } from '@/lib/hooks/use-branches';
 import { RetailOrderItemField } from './retail-order-item-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
@@ -52,7 +66,7 @@ export function RetailOrderForm() {
   const { data: products } = useProducts();
   const { data: branches } = useBranches();
 
-  const methods = useForm<RetailOrderFormData>({
+  const form = useForm<RetailOrderFormData>({
     resolver: zodResolver(retailOrderSchema),
     defaultValues: {
       items: [
@@ -62,16 +76,26 @@ export function RetailOrderForm() {
           quantity: 1,
         },
       ],
+      customer_snapshot: {
+        name: '',
+        email: '',
+        phone: '',
+      },
+      delivery_address: {
+        street: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        country: '',
+        lat: 0,
+        lng: 0,
+      },
+      branch_id: '',
+      estimated_delivery_at: '',
     },
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    control,
-    watch,
-  } = methods;
+  const { control, watch } = form;
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -121,134 +145,165 @@ export function RetailOrderForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <FormProvider {...methods}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Customer Snapshot */}
-          <div className="border rounded-lg p-4 space-y-4">
-            <h3 className="font-medium">Información del Cliente</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer_name">Nombre *</Label>
-                <Input
-                  id="customer_name"
-                  {...register('customer_snapshot.name')}
-                  disabled={isPending}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Customer Snapshot */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-medium">Información del Cliente</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="customer_snapshot.name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre *</FormLabel>
+                      <FormControl>
+                        <Input disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.customer_snapshot?.name && (
-                  <p className="text-sm text-destructive">{errors.customer_snapshot.name.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customer_email">Email</Label>
-                <Input
-                  id="customer_email"
-                  type="email"
-                  {...register('customer_snapshot.email')}
-                  disabled={isPending}
+                <FormField
+                  control={form.control}
+                  name="customer_snapshot.email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customer_phone">Teléfono *</Label>
-                <Input
-                  id="customer_phone"
-                  {...register('customer_snapshot.phone')}
-                  disabled={isPending}
+                <FormField
+                  control={form.control}
+                  name="customer_snapshot.phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Teléfono *</FormLabel>
+                      <FormControl>
+                        <Input disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.customer_snapshot?.phone && (
-                  <p className="text-sm text-destructive">{errors.customer_snapshot.phone.message}</p>
-                )}
               </div>
             </div>
-          </div>
 
-          {/* Delivery Address */}
-          <div className="border rounded-lg p-4 space-y-4">
-            <h3 className="font-medium">Dirección de Entrega</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="delivery_street">Calle *</Label>
-                <Input
-                  id="delivery_street"
-                  {...register('delivery_address.street')}
-                  disabled={isPending}
-                />
-                {errors.delivery_address?.street && (
-                  <p className="text-sm text-destructive">{errors.delivery_address.street.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="delivery_city">Ciudad *</Label>
-                <Input
-                  id="delivery_city"
-                  {...register('delivery_address.city')}
-                  disabled={isPending}
-                />
-                {errors.delivery_address?.city && (
-                  <p className="text-sm text-destructive">{errors.delivery_address.city.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="delivery_country">País *</Label>
-                <Input
-                  id="delivery_country"
-                  {...register('delivery_address.country')}
-                  disabled={isPending}
-                />
-                {errors.delivery_address?.country && (
-                  <p className="text-sm text-destructive">{errors.delivery_address.country.message}</p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="delivery_lat">Latitud *</Label>
-                  <Input
-                    id="delivery_lat"
-                    type="number"
-                    step="any"
-                    {...register('delivery_address.lat', { valueAsNumber: true })}
-                    disabled={isPending}
-                  />
-                  {errors.delivery_address?.lat && (
-                    <p className="text-sm text-destructive">{errors.delivery_address.lat.message}</p>
+            {/* Delivery Address */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-medium">Dirección de Entrega</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="delivery_address.street"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calle *</FormLabel>
+                      <FormControl>
+                        <Input disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="delivery_lng">Longitud *</Label>
-                  <Input
-                    id="delivery_lng"
-                    type="number"
-                    step="any"
-                    {...register('delivery_address.lng', { valueAsNumber: true })}
-                    disabled={isPending}
-                  />
-                  {errors.delivery_address?.lng && (
-                    <p className="text-sm text-destructive">{errors.delivery_address.lng.message}</p>
+                />
+                <FormField
+                  control={form.control}
+                  name="delivery_address.city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ciudad *</FormLabel>
+                      <FormControl>
+                        <Input disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
+                />
+                <FormField
+                  control={form.control}
+                  name="delivery_address.country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>País *</FormLabel>
+                      <FormControl>
+                        <Input disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="delivery_address.lat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitud *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="any"
+                            disabled={isPending}
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="delivery_address.lng"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitud *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="any"
+                            disabled={isPending}
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Branch Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="branch_id">Sucursal *</Label>
-            <select
-              id="branch_id"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              {...register('branch_id')}
-              disabled={isPending}
-            >
-              <option value="">Selecciona una sucursal</option>
-              {branches?.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name} - {branch.address}
-                </option>
-              ))}
-            </select>
-            {errors.branch_id && (
-              <p className="text-sm text-destructive">{errors.branch_id.message}</p>
-            )}
-          </div>
+            {/* Branch Selection */}
+            <FormField
+              control={form.control}
+              name="branch_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sucursal *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una sucursal" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {branches?.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          {branch.name} - {branch.address}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
           {/* Items */}
           <div className="border rounded-lg p-4 space-y-4">
@@ -278,46 +333,48 @@ export function RetailOrderForm() {
                   key={field.id}
                   index={index}
                   productId={selectedProductId}
-                  products={products}
+                  products={products?.data}
                   onRemove={() => remove(index)}
                   canRemove={fields.length > 1}
                   isPending={isPending}
-                  errors={{
-                    product_id: errors.items?.[index]?.product_id,
-                    quantity: errors.items?.[index]?.quantity,
-                  }}
                 />
               );
             })}
-            {errors.items && (
-              <p className="text-sm text-destructive">{errors.items.message}</p>
+            {form.formState.errors.items && (
+              <p className="text-sm text-destructive">{form.formState.errors.items.message}</p>
             )}
           </div>
 
-          {/* Estimated Delivery */}
-          <div className="space-y-2">
-            <Label htmlFor="estimated_delivery_at">Fecha de Entrega Estimada *</Label>
-            <Input
-              id="estimated_delivery_at"
-              type="datetime-local"
-              {...register('estimated_delivery_at')}
-              disabled={isPending}
+            {/* Estimated Delivery */}
+            <FormField
+              control={form.control}
+              name="estimated_delivery_at"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha de Entrega Estimada *</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.estimated_delivery_at && (
-              <p className="text-sm text-destructive">{errors.estimated_delivery_at.message}</p>
-            )}
-          </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Creando...' : 'Crear Orden'}
-            </Button>
-          </div>
-        </form>
-        </FormProvider>
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Creando...' : 'Crear Orden'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

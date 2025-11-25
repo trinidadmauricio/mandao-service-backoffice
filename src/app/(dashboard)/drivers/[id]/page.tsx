@@ -139,14 +139,14 @@ export default function DriverDetailPage() {
                 {(driver.emergency_contact?.phone as string) || 'N/A'}
               </p>
             </div>
-            {driver.emergency_contact?.relationship && (
+            {driver.emergency_contact?.relationship ? (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Relación</p>
                 <p className="text-base">
-                  {driver.emergency_contact.relationship as string}
+                  {String(driver.emergency_contact.relationship)}
                 </p>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 

@@ -8,7 +8,21 @@ import { useCreateDeliveryRate, useUpdateDeliveryRate, useDeliveryRate } from '@
 import { useDeliveryZones } from '@/lib/hooks/use-delivery-zones';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
@@ -44,31 +58,33 @@ export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
   const updateRate = useUpdateDeliveryRate();
   const [priorityEntries, setPriorityEntries] = useState<Array<{ key: string; value: number }>>([]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<DeliveryRateFormData>({
+  const form = useForm<DeliveryRateFormData>({
     resolver: zodResolver(deliveryRateSchema),
     defaultValues: {
       currency: 'USD',
       vehicle_type: 'MOTORCYCLE',
+      zone_id: '',
+      distance_km_min: 0,
+      distance_km_max: 0,
+      base_price: 0,
+      price_per_km: 0,
       priority_multiplier: {},
     },
   });
 
   useEffect(() => {
     if (rate && isEditing) {
-      setValue('zone_id', rate.zone_id || '');
-      setValue('vehicle_type', rate.vehicle_type);
-      setValue('distance_km_min', rate.distance_km_min);
-      setValue('distance_km_max', rate.distance_km_max);
-      setValue('base_price', rate.base_price);
-      setValue('price_per_km', rate.price_per_km);
-      setValue('currency', rate.currency);
-      setValue('priority_multiplier', rate.priority_multiplier || {});
-      
+      form.reset({
+        zone_id: rate.zone_id || '',
+        vehicle_type: rate.vehicle_type,
+        distance_km_min: rate.distance_km_min,
+        distance_km_max: rate.distance_km_max,
+        base_price: rate.base_price,
+        price_per_km: rate.price_per_km,
+        currency: rate.currency,
+        priority_multiplier: rate.priority_multiplier || {},
+      });
+
       // Convert priority_multiplier object to array for editing
       const entries = Object.entries(rate.priority_multiplier || {}).map(([key, value]) => ({
         key,
@@ -76,7 +92,7 @@ export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
       }));
       setPriorityEntries(entries);
     }
-  }, [rate, isEditing, setValue]);
+  }, [rate, isEditing, form]);
 
   const addPriorityEntry = () => {
     setPriorityEntries([...priorityEntries, { key: '', value: 1 }]);
@@ -167,126 +183,169 @@ export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="zone_id">Zona de Entrega (Opcional)</Label>
-              <select
-                id="zone_id"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('zone_id')}
-                disabled={isPending}
-              >
-                <option value="">Todas las zonas</option>
-                {zones?.map((zone) => (
-                  <option key={zone.id} value={zone.id}>
-                    {zone.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="vehicle_type">Tipo de Vehículo *</Label>
-              <select
-                id="vehicle_type"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('vehicle_type')}
-                disabled={isPending}
-              >
-                {Object.entries(vehicleTypeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              {errors.vehicle_type && (
-                <p className="text-sm text-destructive">{errors.vehicle_type.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="distance_km_min">Distancia Mínima (km) *</Label>
-              <Input
-                id="distance_km_min"
-                type="number"
-                step="0.1"
-                min="0"
-                {...register('distance_km_min', { valueAsNumber: true })}
-                disabled={isPending}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="zone_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Zona de Entrega (Opcional)</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value || undefined)}
+                      value={field.value || undefined}
+                      disabled={isPending}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas las zonas" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {zones?.map((zone) => (
+                          <SelectItem key={zone.id} value={zone.id}>
+                            {zone.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.distance_km_min && (
-                <p className="text-sm text-destructive">{errors.distance_km_min.message}</p>
-              )}
+
+              <FormField
+                control={form.control}
+                name="vehicle_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Vehículo *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(vehicleTypeLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="distance_km_max">Distancia Máxima (km) *</Label>
-              <Input
-                id="distance_km_max"
-                type="number"
-                step="0.1"
-                min="0"
-                {...register('distance_km_max', { valueAsNumber: true })}
-                disabled={isPending}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="distance_km_min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Distancia Mínima (km) *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.distance_km_max && (
-                <p className="text-sm text-destructive">{errors.distance_km_max.message}</p>
-              )}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="base_price">Precio Base *</Label>
-              <Input
-                id="base_price"
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('base_price', { valueAsNumber: true })}
-                disabled={isPending}
+              <FormField
+                control={form.control}
+                name="distance_km_max"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Distancia Máxima (km) *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.base_price && (
-                <p className="text-sm text-destructive">{errors.base_price.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="price_per_km">Precio por km *</Label>
-              <Input
-                id="price_per_km"
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('price_per_km', { valueAsNumber: true })}
-                disabled={isPending}
-              />
-              {errors.price_per_km && (
-                <p className="text-sm text-destructive">{errors.price_per_km.message}</p>
-              )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="currency">Moneda *</Label>
-              <Input
-                id="currency"
-                maxLength={3}
-                {...register('currency')}
-                disabled={isPending}
-                placeholder="USD"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="base_price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Precio Base *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.currency && (
-                <p className="text-sm text-destructive">{errors.currency.message}</p>
-              )}
+
+              <FormField
+                control={form.control}
+                name="price_per_km"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Precio por km *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Moneda *</FormLabel>
+                    <FormControl>
+                      <Input maxLength={3} placeholder="USD" disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          </div>
 
           <div className="border rounded-lg p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Multiplicadores por Prioridad</Label>
+              <FormLabel>Multiplicadores por Prioridad</FormLabel>
               <Button
                 type="button"
                 variant="outline"
@@ -334,15 +393,21 @@ export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
             )}
           </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

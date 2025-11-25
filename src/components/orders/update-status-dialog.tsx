@@ -20,9 +20,11 @@ import type { Order } from '@/types/api';
 interface UpdateStatusDialogProps {
   orderId: string;
   currentStatus: Order['status'];
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+  buttonClassName?: string;
 }
 
-export function UpdateStatusDialog({ orderId, currentStatus }: UpdateStatusDialogProps) {
+export function UpdateStatusDialog({ orderId, currentStatus, buttonSize = 'default', buttonClassName }: UpdateStatusDialogProps) {
   const [open, setOpen] = useState(false);
   const [toStatus, setToStatus] = useState<Order['status']>(currentStatus);
   const [notes, setNotes] = useState('');
@@ -86,7 +88,7 @@ export function UpdateStatusDialog({ orderId, currentStatus }: UpdateStatusDialo
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" size={buttonSize} className={buttonClassName}>
           <RefreshCw className="h-4 w-4 mr-2" />
           Actualizar Estado
         </Button>

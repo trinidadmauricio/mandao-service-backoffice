@@ -20,7 +20,7 @@ interface RecalculateTotalsButtonProps {
   orderId: string;
 }
 
-export function RecalculateTotalsButton({ orderId }: RecalculateTotalsButtonProps) {
+export function RecalculateTotalsButton({ orderId, buttonSize = 'default', buttonClassName }: RecalculateTotalsButtonProps) {
   const [open, setOpen] = useState(false);
   const [taxRate, setTaxRate] = useState<number | undefined>();
   const [discountAmount, setDiscountAmount] = useState<number | undefined>();
@@ -53,7 +53,7 @@ export function RecalculateTotalsButton({ orderId }: RecalculateTotalsButtonProp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" size={buttonSize} className={buttonClassName}>
           <Calculator className="h-4 w-4 mr-2" />
           Recalcular Totales
         </Button>

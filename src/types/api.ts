@@ -39,7 +39,8 @@ export interface User {
   tenant_id?: string | null; // Opcional para usuarios SAAS_ADMIN que no tienen tenant
   logistics_provider_id?: string | null; // Opcional para usuarios LOGISTICS_PROVIDER
   email_verified: boolean;
-  active?: boolean; // Opcional, puede no venir en la respuesta del login
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'; // Estado del usuario
+  active?: boolean; // Deprecated: usar status en su lugar, mantenido para compatibilidad
   created_at?: string; // Opcional, puede no venir en la respuesta del login
   updated_at?: string; // Opcional, puede no venir en la respuesta del login
 }
@@ -85,14 +86,24 @@ export interface Order {
   // Historial (populated)
   order_drivers?: Array<{
     id: string;
+    driver_id?: string;
     driver_snapshot: Record<string, unknown>;
     is_current: boolean;
+    assigned_at: string;
     created_at: string;
+    driver_user?: {
+      id: string;
+      email: string;
+      first_name: string;
+      last_name: string;
+      phone: string;
+    };
   }>;
   order_branches?: Array<{
     id: string;
     branch_snapshot: Record<string, unknown>;
     is_current: boolean;
+    assigned_at: string;
     created_at: string;
   }>;
   order_items?: Array<{
@@ -239,10 +250,32 @@ export interface Product {
   tenant_id: string;
   name: string;
   description?: string;
-  sku?: string;
-  status: 'active' | 'inactive' | 'draft';
-  category_id?: string;
+  sku: string;
+  category_id: string;
   brand_id?: string;
+  cost_price: number;
+  selling_price: number;
+  images: {
+    primary?: string;
+    gallery?: string[];
+  } | Record<string, unknown>;
+  is_active: boolean;
+  // Campos opcionales adicionales
+  barcode?: string;
+  compare_at_price?: number;
+  currency?: string;
+  track_inventory?: boolean;
+  current_stock?: number;
+  min_stock_alert?: number;
+  uom?: 'UNIT' | 'KG' | 'G' | 'LITER' | 'ML' | 'BOX' | 'PACK';
+  weight_kg?: number;
+  featured_image_url?: string;
+  has_variants?: boolean;
+  is_featured?: boolean;
+  meta_title?: string;
+  meta_description?: string;
+  // Deprecated: usar is_active en su lugar
+  status?: 'active' | 'inactive' | 'draft';
   created_at: string;
   updated_at: string;
 }

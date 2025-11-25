@@ -5,6 +5,8 @@ import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Edit, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -13,14 +15,22 @@ export default function BranchesPage() {
   const { data: branches, isLoading, error } = useBranches();
   const deleteBranch = useDeleteBranch();
   const { hasPermission } = usePermissions();
+  const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta sucursal?')) {
-      try {
-        await deleteBranch.mutateAsync(id);
-      } catch (error) {
-        console.error('Error deleting branch:', error);
-      }
+    try {
+      await deleteBranch.mutateAsync(id);
+      toast({
+        title: 'Sucursal eliminada',
+        description: 'La sucursal ha sido eliminada exitosamente.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar la sucursal. Por favor, intenta nuevamente.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -110,15 +120,24 @@ export default function BranchesPage() {
                           </Link>
                         )}
                         {hasPermission('branches', 'delete') && (
-                          <Button
+                          <ConfirmDialog
+                            trigger={
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={deleteBranch.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Eliminar
+                              </Button>
+                            }
+                            title="Eliminar Sucursal"
+                            description={`¿Estás seguro de que quieres eliminar la sucursal "${branch.name}"? Esta acción no se puede deshacer.`}
+                            confirmLabel="Eliminar"
+                            cancelLabel="Cancelar"
                             variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(branch.id)}
-                            disabled={deleteBranch.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
-                          </Button>
+                            onConfirm={() => handleDelete(branch.id)}
+                          />
                         )}
                       </div>
                     </div>

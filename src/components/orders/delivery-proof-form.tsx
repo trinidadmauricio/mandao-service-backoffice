@@ -6,7 +6,22 @@ import { z } from 'zod';
 import { useDeliveryProof } from '@/lib/hooks/use-orders';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -29,14 +44,14 @@ export function DeliveryProofForm({ orderId, onSuccess }: DeliveryProofFormProps
   const { toast } = useToast();
   const deliveryProof = useDeliveryProof();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<DeliveryProofFormData>({
+  const form = useForm<DeliveryProofFormData>({
     resolver: zodResolver(deliveryProofSchema),
     defaultValues: {
       proof_type: 'NONE',
+      delivered_to_name: '',
+      delivered_at: '',
+      driver_notes: '',
+      proof_data: {},
     },
   });
 
@@ -45,7 +60,7 @@ export function DeliveryProofForm({ orderId, onSuccess }: DeliveryProofFormProps
       await deliveryProof.mutateAsync({
         orderId,
         proof_type: data.proof_type,
-        proof_data: Object.keys(proofData).length > 0 ? proofData : {},
+        proof_data: data.proof_data || {},
         delivered_to_name: data.delivered_to_name,
         delivered_at: data.delivered_at,
         driver_notes: data.driver_notes,
@@ -75,66 +90,81 @@ export function DeliveryProofForm({ orderId, onSuccess }: DeliveryProofFormProps
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="proof_type">Tipo de Prueba</Label>
-            <select
-              id="proof_type"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              {...register('proof_type')}
-              disabled={isPending}
-            >
-              <option value="NONE">Ninguna</option>
-              <option value="SIGNATURE">Firma</option>
-              <option value="PHOTO">Foto</option>
-              <option value="CODE">Código</option>
-            </select>
-            {errors.proof_type && (
-              <p className="text-sm text-destructive">{errors.proof_type.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="delivered_to_name">Nombre del Receptor *</Label>
-            <Input
-              id="delivered_to_name"
-              {...register('delivered_to_name')}
-              disabled={isPending}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="proof_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Prueba</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="NONE">Ninguna</SelectItem>
+                      <SelectItem value="SIGNATURE">Firma</SelectItem>
+                      <SelectItem value="PHOTO">Foto</SelectItem>
+                      <SelectItem value="CODE">Código</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.delivered_to_name && (
-              <p className="text-sm text-destructive">{errors.delivered_to_name.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="delivered_at">Fecha y Hora de Entrega *</Label>
-            <Input
-              id="delivered_at"
-              type="datetime-local"
-              {...register('delivered_at')}
-              disabled={isPending}
+            <FormField
+              control={form.control}
+              name="delivered_to_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Receptor *</FormLabel>
+                  <FormControl>
+                    <Input disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.delivered_at && (
-              <p className="text-sm text-destructive">{errors.delivered_at.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="driver_notes">Notas del Driver</Label>
-            <textarea
-              id="driver_notes"
-              {...register('driver_notes')}
-              disabled={isPending}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            <FormField
+              control={form.control}
+              name="delivered_at"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha y Hora de Entrega *</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Registrando...' : 'Registrar Prueba'}
-            </Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="driver_notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notas del Driver</FormLabel>
+                  <FormControl>
+                    <Textarea disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-4">
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Registrando...' : 'Registrar Prueba'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

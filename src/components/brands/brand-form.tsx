@@ -7,14 +7,27 @@ import { z } from 'zod';
 import { useCreateBrand, useUpdateBrand, useBrand } from '@/lib/hooks/use-brands';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
+import { generateSlug } from '@/lib/utils/slug';
 
 const brandSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
+  slug: z.string().min(1, 'El slug es requerido'),
   description: z.string().optional(),
   logo_url: z.string().url().optional().or(z.literal('')),
+  is_active: z.boolean().optional(),
 });
 
 type BrandFormData = z.infer<typeof brandSchema>;
@@ -25,33 +38,50 @@ interface BrandFormProps {
 
 export function BrandForm({ brandId }: BrandFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const isEditing = !!brandId;
   const { data: brand, isLoading: isLoadingBrand } = useBrand(brandId || '');
   const createBrand = useCreateBrand();
   const updateBrand = useUpdateBrand();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<BrandFormData>({
+  const form = useForm<BrandFormData>({
     resolver: zodResolver(brandSchema),
+    defaultValues: {
+      name: '',
+      slug: '',
+      description: '',
+      logo_url: '',
+      is_active: true,
+    },
   });
+
+  // Generar slug automáticamente desde el nombre
+  const nameValue = form.watch('name');
+  useEffect(() => {
+    if (!isEditing && nameValue) {
+      const autoSlug = generateSlug(nameValue);
+      form.setValue('slug', autoSlug, { shouldValidate: false });
+    }
+  }, [nameValue, isEditing, form]);
 
   useEffect(() => {
     if (brand && isEditing) {
-      setValue('name', brand.name);
-      setValue('description', brand.description || '');
-      setValue('logo_url', brand.logo_url || '');
+      form.reset({
+        name: brand.name,
+        slug: brand.slug || '',
+        description: brand.description || '',
+        logo_url: brand.logo_url || '',
+        is_active: brand.is_active ?? true,
+      });
     }
-  }, [brand, isEditing, setValue]);
+  }, [brand, isEditing, form]);
 
   const onSubmit = async (data: BrandFormData) => {
     try {
       const submitData = {
         ...data,
         logo_url: data.logo_url || undefined,
+        is_active: data.is_active ?? true,
       };
 
       if (isEditing && brandId) {
@@ -59,12 +89,24 @@ export function BrandForm({ brandId }: BrandFormProps) {
           id: brandId,
           data: submitData,
         });
+        toast({
+          title: 'Marca actualizada',
+          description: 'La marca ha sido actualizada exitosamente.',
+        });
       } else {
         await createBrand.mutateAsync(submitData);
+        toast({
+          title: 'Marca creada',
+          description: 'La marca ha sido creada exitosamente.',
+        });
       }
       router.push('/brands');
-    } catch (error) {
-      console.error('Error saving brand:', error);
+    } catch (error: unknown) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Hubo un error al guardar la marca.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -92,57 +134,104 @@ export function BrandForm({ brandId }: BrandFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre *</Label>
-            <Input id="name" {...register('name')} disabled={isPending} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <textarea
-              id="description"
-              {...register('description')}
-              disabled={isPending}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre *</FormLabel>
+                  <FormControl>
+                    <Input disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="logo_url">URL del Logo</Label>
-            <Input
-              id="logo_url"
-              type="url"
-              {...register('logo_url')}
-              disabled={isPending}
-              placeholder="https://example.com/logo.png"
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slug *</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isPending}
+                      {...field}
+                      placeholder="nike"
+                      onChange={(e) => {
+                        const slug = generateSlug(e.target.value);
+                        field.onChange(slug);
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    URL amigable (se genera automáticamente desde el nombre)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.logo_url && (
-              <p className="text-sm text-destructive">{errors.logo_url.message}</p>
-            )}
-            {brand?.logo_url && (
-              <div className="mt-2">
-                <img
-                  src={brand.logo_url}
-                  alt={brand.name}
-                  className="h-20 w-20 object-contain border rounded"
-                />
-              </div>
-            )}
-          </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción</FormLabel>
+                  <FormControl>
+                    <Textarea disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="logo_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL del Logo</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder="https://example.com/logo.png"
+                      disabled={isPending}
+                      {...field}
+                    />
+                  </FormControl>
+                  {brand?.logo_url && (
+                    <div className="mt-2">
+                      <img
+                        src={brand.logo_url}
+                        alt={brand.name}
+                        className="h-20 w-20 object-contain border rounded"
+                      />
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

@@ -7,7 +7,23 @@ import { z } from 'zod';
 import { useCreateBranch, useUpdateBranch, useBranch } from '@/lib/hooks/use-branches';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
@@ -37,31 +53,34 @@ export function BranchForm({ branchId }: BranchFormProps) {
   const createBranch = useCreateBranch();
   const updateBranch = useUpdateBranch();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<BranchFormData>({
+  const form = useForm<BranchFormData>({
     resolver: zodResolver(branchSchema),
     defaultValues: {
       is_main: false,
       status: 'ACTIVE',
+      name: '',
+      address: '',
+      gps_lat: 0,
+      gps_lng: 0,
+      contact_phone: '',
+      operating_hours: {},
     },
   });
 
   useEffect(() => {
     if (branch && isEditing) {
-      setValue('name', branch.name);
-      setValue('address', branch.address);
-      setValue('gps_lat', branch.gps_lat);
-      setValue('gps_lng', branch.gps_lng);
-      setValue('contact_phone', branch.contact_phone);
-      setValue('is_main', branch.is_main);
-      setValue('status', branch.status);
-      setValue('operating_hours', branch.operating_hours || {});
+      form.reset({
+        name: branch.name,
+        address: branch.address,
+        gps_lat: branch.gps_lat,
+        gps_lng: branch.gps_lng,
+        contact_phone: branch.contact_phone,
+        is_main: branch.is_main,
+        status: branch.status,
+        operating_hours: branch.operating_hours || {},
+      });
     }
-  }, [branch, isEditing, setValue]);
+  }, [branch, isEditing, form]);
 
   const onSubmit = async (data: BranchFormData) => {
     try {
@@ -115,108 +134,150 @@ export function BranchForm({ branchId }: BranchFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre *</Label>
-            <Input id="name" {...register('name')} disabled={isPending} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Dirección *</Label>
-            <textarea
-              id="address"
-              {...register('address')}
-              disabled={isPending}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre *</FormLabel>
+                  <FormControl>
+                    <Input disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.address && (
-              <p className="text-sm text-destructive">{errors.address.message}</p>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="gps_lat">Latitud GPS *</Label>
-              <Input
-                id="gps_lat"
-                type="number"
-                step="any"
-                {...register('gps_lat', { valueAsNumber: true })}
-                disabled={isPending}
-              />
-              {errors.gps_lat && (
-                <p className="text-sm text-destructive">{errors.gps_lat.message}</p>
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dirección *</FormLabel>
+                  <FormControl>
+                    <Textarea disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="gps_lat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Latitud GPS *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gps_lng"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Longitud GPS *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="gps_lng">Longitud GPS *</Label>
-              <Input
-                id="gps_lng"
-                type="number"
-                step="any"
-                {...register('gps_lng', { valueAsNumber: true })}
-                disabled={isPending}
-              />
-              {errors.gps_lng && (
-                <p className="text-sm text-destructive">{errors.gps_lng.message}</p>
+            <FormField
+              control={form.control}
+              name="contact_phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Teléfono de Contacto *</FormLabel>
+                  <FormControl>
+                    <Input disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un estado" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Activa</SelectItem>
+                        <SelectItem value="INACTIVE">Inactiva</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="is_main"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-8">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isPending}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Sucursal principal</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contact_phone">Teléfono de Contacto *</Label>
-            <Input id="contact_phone" {...register('contact_phone')} disabled={isPending} />
-            {errors.contact_phone && (
-              <p className="text-sm text-destructive">{errors.contact_phone.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Estado *</Label>
-              <select
-                id="status"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('status')}
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
                 disabled={isPending}
               >
-                <option value="ACTIVE">Activa</option>
-                <option value="INACTIVE">Inactiva</option>
-              </select>
-              {errors.status && (
-                <p className="text-sm text-destructive">{errors.status.message}</p>
-              )}
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2 pt-8">
-                <input
-                  type="checkbox"
-                  id="is_main"
-                  {...register('is_main')}
-                  disabled={isPending}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <Label htmlFor="is_main" className="cursor-pointer">
-                  Sucursal principal
-                </Label>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

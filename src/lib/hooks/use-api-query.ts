@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { AxiosResponse } from 'axios';
 
@@ -25,11 +25,10 @@ export function useApiQuery<TData = unknown, TError = unknown>(
  * Hook genérico para mutations de API
  */
 export function useApiMutation<TData = unknown, TVariables = unknown, TError = unknown>() {
-  const { useMutation, useQueryClient } = require('@tanstack/react-query');
   const queryClient = useQueryClient();
 
   return useMutation<AxiosResponse<{ data: TData }>, TError, TVariables>({
-    mutationFn: async (variables: TVariables) => {
+    mutationFn: async (_variables: TVariables) => {
       // Este hook debe ser usado con useMutation directamente
       // Esta es solo una estructura base
       throw new Error('useApiMutation debe ser implementado con useMutation específico');

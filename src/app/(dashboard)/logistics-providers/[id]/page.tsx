@@ -6,6 +6,7 @@ import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/date';
 import Link from 'next/link';
@@ -30,9 +31,6 @@ export default function LogisticsProviderDetailPage() {
 
   const handleDelete = async () => {
     if (!provider) return;
-    if (!confirm(`¿Estás seguro de eliminar el proveedor "${provider.company_name}"?`)) {
-      return;
-    }
 
     try {
       await deleteProvider.mutateAsync(providerId);
@@ -132,10 +130,22 @@ export default function LogisticsProviderDetailPage() {
                 <LogisticsProviderForm initialData={provider} />
               </DialogContent>
             </Dialog>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteProvider.isPending}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar
-            </Button>
+            {provider && (
+              <ConfirmDialog
+                trigger={
+                  <Button variant="destructive" disabled={deleteProvider.isPending}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
+                }
+                title="Eliminar Proveedor"
+                description={`¿Estás seguro de que quieres eliminar el proveedor "${provider.company_name}"? Esta acción no se puede deshacer.`}
+                confirmLabel="Eliminar"
+                cancelLabel="Cancelar"
+                variant="destructive"
+                onConfirm={handleDelete}
+              />
+            )}
           </div>
         </div>
 

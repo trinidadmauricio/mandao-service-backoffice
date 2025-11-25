@@ -5,6 +5,7 @@ import { useInventoryReport, type InventoryReportFilters } from '@/lib/hooks/use
 import { useCategories } from '@/lib/hooks/use-categories';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
 import { AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { InventoryChart } from './inventory-chart';

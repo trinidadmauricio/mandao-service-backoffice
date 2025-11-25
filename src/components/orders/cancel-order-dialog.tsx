@@ -18,9 +18,11 @@ import { useToast } from '@/components/ui/use-toast';
 interface CancelOrderDialogProps {
   orderId: string;
   orderNumber: string;
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+  buttonClassName?: string;
 }
 
-export function CancelOrderDialog({ orderId, orderNumber }: CancelOrderDialogProps) {
+export function CancelOrderDialog({ orderId, orderNumber, buttonSize = 'default', buttonClassName }: CancelOrderDialogProps) {
   const [open, setOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const cancelOrder = useCancelOrder();
@@ -59,7 +61,7 @@ export function CancelOrderDialog({ orderId, orderNumber }: CancelOrderDialogPro
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" className="w-full">
+        <Button variant="destructive" size={buttonSize} className={buttonClassName}>
           <X className="h-4 w-4 mr-2" />
           Cancelar Orden
         </Button>

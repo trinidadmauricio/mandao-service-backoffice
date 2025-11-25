@@ -7,7 +7,16 @@ import { z } from 'zod';
 import { useCreateDeliveryZone, useUpdateDeliveryZone, useDeliveryZone } from '@/lib/hooks/use-delivery-zones';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
@@ -36,30 +45,32 @@ export function DeliveryZoneForm({ zoneId }: DeliveryZoneFormProps) {
   const createZone = useCreateDeliveryZone();
   const updateZone = useUpdateDeliveryZone();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<DeliveryZoneFormData>({
+  const form = useForm<DeliveryZoneFormData>({
     resolver: zodResolver(deliveryZoneSchema),
     defaultValues: {
       currency: 'USD',
       is_active: true,
+      name: '',
+      boundary: '',
+      base_rate: 0,
+      rate_per_km: 0,
+      surge_multiplier: undefined,
     },
   });
 
   useEffect(() => {
     if (zone && isEditing) {
-      setValue('name', zone.name);
-      setValue('boundary', zone.boundary);
-      setValue('base_rate', zone.base_rate);
-      setValue('rate_per_km', zone.rate_per_km);
-      setValue('surge_multiplier', zone.surge_multiplier);
-      setValue('currency', zone.currency);
-      setValue('is_active', zone.is_active);
+      form.reset({
+        name: zone.name,
+        boundary: zone.boundary,
+        base_rate: zone.base_rate,
+        rate_per_km: zone.rate_per_km,
+        surge_multiplier: zone.surge_multiplier,
+        currency: zone.currency,
+        is_active: zone.is_active,
+      });
     }
-  }, [zone, isEditing, setValue]);
+  }, [zone, isEditing, form]);
 
   const onSubmit = async (data: DeliveryZoneFormData) => {
     try {
@@ -118,123 +129,165 @@ export function DeliveryZoneForm({ zoneId }: DeliveryZoneFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre *</Label>
-            <Input id="name" {...register('name')} disabled={isPending} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="boundary">
-              Boundary (WKT) *{' '}
-              <span className="text-xs text-muted-foreground">
-                (Formato: POLYGON((lng1 lat1, lng2 lat2, ...)))
-              </span>
-            </Label>
-            <textarea
-              id="boundary"
-              {...register('boundary')}
-              disabled={isPending}
-              className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
-              placeholder="POLYGON((-58.3816 -34.6037, -58.3826 -34.6047, -58.3836 -34.6057, -58.3816 -34.6037))"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre *</FormLabel>
+                  <FormControl>
+                    <Input disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.boundary && (
-              <p className="text-sm text-destructive">{errors.boundary.message}</p>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="base_rate">Tarifa Base *</Label>
-              <Input
-                id="base_rate"
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('base_rate', { valueAsNumber: true })}
-                disabled={isPending}
-              />
-              {errors.base_rate && (
-                <p className="text-sm text-destructive">{errors.base_rate.message}</p>
+            <FormField
+              control={form.control}
+              name="boundary"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Boundary (WKT) *{' '}
+                    <span className="text-xs text-muted-foreground">
+                      (Formato: POLYGON((lng1 lat1, lng2 lat2, ...)))
+                    </span>
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      disabled={isPending}
+                      className="font-mono"
+                      placeholder="POLYGON((-58.3816 -34.6037, -58.3826 -34.6047, -58.3836 -34.6057, -58.3816 -34.6037))"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="base_rate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tarifa Base *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rate_per_km"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tarifa por Kilómetro *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="rate_per_km">Tarifa por Kilómetro *</Label>
-              <Input
-                id="rate_per_km"
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('rate_per_km', { valueAsNumber: true })}
-                disabled={isPending}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="surge_multiplier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Multiplicador de Surge (0-10)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="10"
+                        disabled={isPending}
+                        {...field}
+                        value={field.value || ''}
+                        onChange={(e) =>
+                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.rate_per_km && (
-                <p className="text-sm text-destructive">{errors.rate_per_km.message}</p>
+
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Moneda *</FormLabel>
+                    <FormControl>
+                      <Input maxLength={3} placeholder="USD" disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="is_active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isPending}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Zona activa</FormLabel>
+                  </div>
+                </FormItem>
               )}
-            </div>
-          </div>
+            />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="surge_multiplier">Multiplicador de Surge (0-10)</Label>
-              <Input
-                id="surge_multiplier"
-                type="number"
-                step="0.1"
-                min="0"
-                max="10"
-                {...register('surge_multiplier', { valueAsNumber: true })}
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
                 disabled={isPending}
-              />
-              {errors.surge_multiplier && (
-                <p className="text-sm text-destructive">{errors.surge_multiplier.message}</p>
-              )}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="currency">Moneda *</Label>
-              <Input
-                id="currency"
-                maxLength={3}
-                {...register('currency')}
-                disabled={isPending}
-                placeholder="USD"
-              />
-              {errors.currency && (
-                <p className="text-sm text-destructive">{errors.currency.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="is_active"
-                {...register('is_active')}
-                disabled={isPending}
-                className="h-4 w-4 rounded border-gray-300"
-                defaultChecked
-              />
-              <Label htmlFor="is_active" className="cursor-pointer">
-                Zona activa
-              </Label>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

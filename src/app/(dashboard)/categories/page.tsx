@@ -5,6 +5,8 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,14 +14,22 @@ export default function CategoriesPage() {
   const { data: categories, isLoading, error } = useCategories();
   const deleteCategory = useDeleteCategory();
   const { hasPermission } = usePermissions();
+  const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
-      try {
-        await deleteCategory.mutateAsync(id);
-      } catch (error) {
-        console.error('Error deleting category:', error);
-      }
+    try {
+      await deleteCategory.mutateAsync(id);
+      toast({
+        title: 'Categoría eliminada',
+        description: 'La categoría ha sido eliminada exitosamente.',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar la categoría. Por favor, intenta nuevamente.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -112,15 +122,24 @@ export default function CategoriesPage() {
                       </Link>
                     )}
                     {hasPermission('products', 'delete') && (
-                      <Button
+                      <ConfirmDialog
+                        trigger={
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={deleteCategory.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </Button>
+                        }
+                        title="Eliminar Categoría"
+                        description={`¿Estás seguro de que quieres eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`}
+                        confirmLabel="Eliminar"
+                        cancelLabel="Cancelar"
                         variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(category.id)}
-                        disabled={deleteCategory.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
-                      </Button>
+                        onConfirm={() => handleDelete(category.id)}
+                      />
                     )}
                   </div>
                 </div>

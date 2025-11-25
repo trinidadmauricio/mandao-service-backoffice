@@ -6,18 +6,39 @@ import type { Product } from '@/types/api';
 export interface ProductsFilters {
   category_id?: string;
   brand_id?: string;
-  status?: 'active' | 'inactive' | 'draft';
+  is_active?: boolean;
   search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ProductsResponse {
+  data: Product[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 export function useProducts(filters?: ProductsFilters) {
   return useQuery({
     queryKey: ['products', filters],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: Product[] }>(endpoints.products.list, {
-        params: filters,
-      });
-      return response.data.data;
+      const response = await apiClient.get<{ status: string; data: Product[] }>(
+        endpoints.products.list,
+        {
+          params: filters,
+        }
+      );
+      // El backend devuelve { status: 'success', data: [...] }
+      const products = response.data.data || [];
+      return {
+        data: products,
+        total: products.length,
+        page: 1,
+        limit: products.length,
+        totalPages: 1,
+      } as ProductsResponse;
     },
   });
 }

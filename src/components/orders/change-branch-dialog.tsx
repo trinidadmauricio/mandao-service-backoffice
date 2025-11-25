@@ -17,9 +17,11 @@ import { MapPin } from 'lucide-react';
 
 interface ChangeBranchDialogProps {
   orderId: string;
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+  buttonClassName?: string;
 }
 
-export function ChangeBranchDialog({ orderId }: ChangeBranchDialogProps) {
+export function ChangeBranchDialog({ orderId, buttonSize = 'default', buttonClassName }: ChangeBranchDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const { data: branches } = useBranches();
@@ -45,7 +47,7 @@ export function ChangeBranchDialog({ orderId }: ChangeBranchDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" size={buttonSize} className={buttonClassName}>
           <MapPin className="h-4 w-4 mr-2" />
           Cambiar Branch
         </Button>

@@ -10,16 +10,36 @@ export interface OrdersFilters {
   order_type?: 'RETAIL' | 'ON_DEMAND';
   start_date?: string;
   end_date?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface OrdersResponse {
+  data: Order[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 export function useOrders(filters?: OrdersFilters) {
   return useQuery({
     queryKey: ['orders', filters],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: Order[] }>(endpoints.orders.list, {
-        params: filters,
-      });
-      return response.data.data;
+      const response = await apiClient.get<{ data: Order[]; total?: number; page?: number; limit?: number; totalPages?: number }>(
+        endpoints.orders.list,
+        {
+          params: filters,
+        }
+      );
+      return {
+        data: response.data.data,
+        total: response.data.total,
+        page: response.data.page,
+        limit: response.data.limit,
+        totalPages: response.data.totalPages,
+      } as OrdersResponse;
     },
   });
 }

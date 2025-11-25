@@ -3,9 +3,10 @@
 import { useParams } from 'next/navigation';
 import { useOrder } from '@/lib/hooks/use-orders';
 import { PermissionGuard } from '@/components/auth/permission-guard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { formatDate } from '@/lib/utils/date';
 import { formatCurrency } from '@/lib/utils/currency';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -16,12 +17,26 @@ import { UpdateStatusDialog } from '@/components/orders/update-status-dialog';
 import { CancelOrderDialog } from '@/components/orders/cancel-order-dialog';
 import { RecalculateTotalsButton } from '@/components/orders/recalculate-totals-button';
 import { OrderTimeline } from '@/components/orders/order-timeline';
+import { 
+  Package, 
+  User, 
+  MapPin, 
+  Truck, 
+  Building2, 
+  Calendar, 
+  DollarSign,
+  AlertCircle,
+  Copy
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id as string;
   const { data: order, isLoading, error } = useOrder(orderId);
   const { hasPermission } = usePermissions();
+  const { toast } = useToast();
 
   if (isLoading) {
     return (
@@ -49,6 +64,18 @@ export default function OrderDetailPage() {
     );
   }
 
+  const currentDriver = order.order_drivers?.find((od) => od.is_current);
+  const currentBranch = order.order_branches?.find((ob) => ob.is_current);
+  const currentTotal = order.order_summary_totals?.find((t) => t.is_current);
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: 'Copiado',
+      description: `${label} copiado al portapapeles`,
+    });
+  };
+
   return (
     <PermissionGuard
       resource="orders"
@@ -56,126 +83,50 @@ export default function OrderDetailPage() {
       fallback={<div>No tienes permisos para acceder a esta página</div>}
     >
       <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Orden {order.order_display_number}</h1>
-          <p className="text-muted-foreground mt-2">Tracking: {order.tracking_code}</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <OrderStatusBadge status={order.status} />
-          <Badge variant="outline">{order.order_type}</Badge>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Información General</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Número de Orden</p>
-              <p className="font-medium">{order.order_display_number}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Tracking Code</p>
-              <p className="font-medium">{order.tracking_code}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Estado</p>
-              <OrderStatusBadge status={order.status} />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Tipo</p>
-              <Badge variant="outline">{order.order_type}</Badge>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Prioridad</p>
-              <Badge variant={order.priority === 'URGENT' ? 'destructive' : 'default'}>
-                {order.priority}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Fecha Estimada de Entrega</p>
-              <p className="font-medium">{formatDate(order.estimated_delivery_at)}</p>
-            </div>
-            {order.scheduled_pickup_at && (
-              <div>
-                <p className="text-sm text-muted-foreground">Pickup Programado</p>
-                <p className="font-medium">{formatDate(order.scheduled_pickup_at)}</p>
+        {/* Header Section */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">Orden {order.order_display_number}</h1>
+                <OrderStatusBadge status={order.status} />
+                <Badge variant="outline" className="text-xs">
+                  {order.order_type}
+                </Badge>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Cliente</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {order.customer_snapshot && typeof order.customer_snapshot === 'object' && (
-              <>
-                <div>
-                  <p className="text-sm text-muted-foreground">Nombre</p>
-                  <p className="font-medium">
-                    {order.customer_snapshot.name || 'N/A'}
-                  </p>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Tracking:</span>
+                  <code className="px-2 py-1 bg-muted rounded text-xs font-mono">
+                    {order.tracking_code}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => copyToClipboard(order.tracking_code, 'Código de tracking')}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 </div>
-                {order.customer_snapshot.phone && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Teléfono</p>
-                    <p className="font-medium">{order.customer_snapshot.phone}</p>
-                  </div>
-                )}
-                {order.customer_snapshot.email && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{order.customer_snapshot.email}</p>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {order.priority === 'URGENT' && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Urgente
+                </Badge>
+              )}
+            </div>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Dirección de Entrega</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {order.delivery_address && typeof order.delivery_address === 'object' && (
-              <>
-                <div>
-                  <p className="text-sm text-muted-foreground">Dirección</p>
-                  <p className="font-medium">
-                    {order.delivery_address.street}, {order.delivery_address.city}
-                  </p>
-                  {order.delivery_address.country && (
-                    <p className="text-sm text-muted-foreground">
-                      {order.delivery_address.country}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Coordenadas</p>
-                  <p className="font-medium">
-                    {order.delivery_lat}, {order.delivery_lng}
-                  </p>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Acciones</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {hasPermission('orders', 'manage') && (
-              <>
-                <AssignDriverDialog orderId={order.id} />
-                <ChangeBranchDialog orderId={order.id} />
+          {/* Action Bar */}
+          {hasPermission('orders', 'manage') && (
+            <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
+              <div className="flex flex-wrap items-center gap-2">
+                <AssignDriverDialog orderId={order.id} buttonSize="sm" />
+                <ChangeBranchDialog orderId={order.id} buttonSize="sm" />
                 <ModifyItemsDialog
                   orderId={order.id}
                   currentItems={order.order_items?.map((item) => ({
@@ -185,117 +136,442 @@ export default function OrderDetailPage() {
                     unit_price: Number(item.unit_price),
                     notes: item.notes || undefined,
                   }))}
+                  buttonSize="sm"
                 />
-                <UpdateStatusDialog orderId={order.id} currentStatus={order.status} />
-                <RecalculateTotalsButton orderId={order.id} />
-                {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
-                  <CancelOrderDialog orderId={order.id} orderNumber={order.order_display_number} />
-                )}
-              </>
-            )}
-            {order.special_instructions && (
-              <div>
-                <p className="text-sm text-muted-foreground">Instrucciones Especiales</p>
-                <p className="font-medium">{order.special_instructions}</p>
+                <UpdateStatusDialog orderId={order.id} currentStatus={order.status} buttonSize="sm" />
+                <RecalculateTotalsButton orderId={order.id} buttonSize="sm" />
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Items Actuales */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Items Actuales</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {order.order_items && order.order_items.length > 0 ? (
-            <div className="space-y-4">
-              {order.order_items.map((item) => {
-                const product = item.product_snapshot as Record<string, unknown>;
-                return (
-                  <div key={item.id} className="flex items-center justify-between p-3 border rounded">
-                    <div>
-                      <p className="font-medium">{product.name as string || 'Producto'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Cantidad: {Number(item.quantity)} | Precio unitario: {formatCurrency(Number(item.unit_price), product.currency as string || 'USD')}
-                      </p>
-                      {item.notes && (
-                        <p className="text-xs text-muted-foreground mt-1">Notas: {item.notes}</p>
-                      )}
-                    </div>
-                    <p className="font-medium">
-                      {formatCurrency(Number(item.quantity) * Number(item.unit_price), product.currency as string || 'USD')}
-                    </p>
-                  </div>
-                );
-              })}
+              {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+                <div className="flex items-center gap-2 pl-2 border-l">
+                  <CancelOrderDialog orderId={order.id} orderNumber={order.order_display_number} buttonSize="sm" />
+                </div>
+              )}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No hay items registrados</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Totales Actuales */}
-      {order.order_summary_totals && order.order_summary_totals.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Totales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {order.order_summary_totals
-              .filter((total) => total.is_current)
-              .map((total) => (
-                <div key={total.id} className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Subtotal:</span>
-                    <span className="font-medium">
-                      {formatCurrency(Number(total.subtotal), total.currency)}
-                    </span>
+        {/* Quick Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">
+                    {currentTotal 
+                      ? formatCurrency(Number(currentTotal.total_amount), currentTotal.currency)
+                      : 'N/A'}
+                  </p>
+                </div>
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Items</p>
+                  <p className="text-2xl font-bold">{order.order_items?.length || 0}</p>
+                </div>
+                <Package className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Entrega Estimada</p>
+                  <p className="text-sm font-medium">{formatDate(order.estimated_delivery_at)}</p>
+                </div>
+                <Calendar className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Driver</p>
+                  <p className="text-sm font-medium">
+                    {currentDriver?.driver_user 
+                      ? `${currentDriver.driver_user.first_name} ${currentDriver.driver_user.last_name}`
+                      : 'No asignado'}
+                  </p>
+                </div>
+                <Truck className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Left Column - Main Information */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Order Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Información de la Orden</CardTitle>
+                <CardDescription>Detalles generales de la orden</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Número de Orden</p>
+                    <p className="font-medium">{order.order_display_number}</p>
                   </div>
-                  {Number(total.tax_amount) > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Impuesto ({Number(total.tax_rate) * 100}%):
-                      </span>
-                      <span className="font-medium">
-                        {formatCurrency(Number(total.tax_amount), total.currency)}
-                      </span>
-                    </div>
-                  )}
-                  {Number(total.delivery_fee) > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Tarifa de entrega:</span>
-                      <span className="font-medium">
-                        {formatCurrency(Number(total.delivery_fee), total.currency)}
-                      </span>
-                    </div>
-                  )}
-                  {Number(total.discount_amount) > 0 && (
-                    <div className="flex justify-between text-destructive">
-                      <span className="text-sm">Descuento:</span>
-                      <span className="font-medium">
-                        -{formatCurrency(Number(total.discount_amount), total.currency)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-t pt-2 mt-2">
-                    <span className="font-medium">Total:</span>
-                    <span className="text-lg font-bold">
-                      {formatCurrency(Number(total.total_amount), total.currency)}
-                    </span>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Estado</p>
+                    <OrderStatusBadge status={order.status} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Tipo</p>
+                    <Badge variant="outline">{order.order_type}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Prioridad</p>
+                    <Badge variant={order.priority === 'URGENT' ? 'destructive' : 'default'}>
+                      {order.priority}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Fecha de Creación</p>
+                    <p className="font-medium">{formatDate(order.created_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Última Actualización</p>
+                    <p className="font-medium">{formatDate(order.updated_at)}</p>
                   </div>
                 </div>
-              ))}
-          </CardContent>
-        </Card>
-      )}
+                {order.scheduled_pickup_at && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Pickup Programado</p>
+                      <p className="font-medium">{formatDate(order.scheduled_pickup_at)}</p>
+                    </div>
+                  </>
+                )}
+                {order.special_instructions && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Instrucciones Especiales</p>
+                      <p className="text-sm">{order.special_instructions}</p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-      {/* Historial */}
-      {order && <OrderTimeline order={order} />}
-    </div>
+            {/* Items */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Items de la Orden</CardTitle>
+                <CardDescription>{order.order_items?.length || 0} {order.order_items?.length === 1 ? 'item' : 'items'}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {order.order_items && order.order_items.length > 0 ? (
+                  <div className="space-y-3">
+                    {order.order_items.map((item) => {
+                      const product = item.product_snapshot as Record<string, unknown>;
+                      const quantity = Number(item.quantity);
+                      const unitPrice = Number(item.unit_price);
+                      const subtotal = quantity * unitPrice;
+                      const currency = (product.currency as string) || 'USD';
+                      
+                      return (
+                        <div key={item.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                          <div className="flex-1 space-y-1">
+                            <p className="font-medium">{product.name as string || 'Producto'}</p>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>Cantidad: {quantity}</span>
+                              <span>•</span>
+                              <span>Precio unitario: {formatCurrency(unitPrice, currency)}</span>
+                            </div>
+                            {item.notes && (
+                              <p className="text-xs text-muted-foreground mt-1 italic">Nota: {String(item.notes)}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{formatCurrency(subtotal, currency)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No hay items registrados</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Totals */}
+            {currentTotal && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resumen de Totales</CardTitle>
+                  <CardDescription>Versión {currentTotal.version}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium">
+                        {formatCurrency(Number(currentTotal.subtotal), currentTotal.currency)}
+                      </span>
+                    </div>
+                    {Number(currentTotal.tax_amount) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Impuesto ({Number(currentTotal.tax_rate) * 100}%)
+                        </span>
+                        <span className="font-medium">
+                          {formatCurrency(Number(currentTotal.tax_amount), currentTotal.currency)}
+                        </span>
+                      </div>
+                    )}
+                    {Number(currentTotal.delivery_fee) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tarifa de entrega</span>
+                        <span className="font-medium">
+                          {formatCurrency(Number(currentTotal.delivery_fee), currentTotal.currency)}
+                        </span>
+                      </div>
+                    )}
+                    {Number(currentTotal.discount_amount) > 0 && (
+                      <div className="flex justify-between text-sm text-destructive">
+                        <span>Descuento</span>
+                        <span className="font-medium">
+                          -{formatCurrency(Number(currentTotal.discount_amount), currentTotal.currency)}
+                        </span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-base font-semibold">Total</span>
+                      <span className="text-xl font-bold">
+                        {formatCurrency(Number(currentTotal.total_amount), currentTotal.currency)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Column - Sidebar Information */}
+          <div className="space-y-6">
+            {/* Customer */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Cliente
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {order.customer_snapshot && typeof order.customer_snapshot === 'object' ? (
+                  <>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Nombre</p>
+                      <p className="font-medium">
+                        {String(order.customer_snapshot?.name || 'N/A')}
+                      </p>
+                    </div>
+                    {order.customer_snapshot?.phone && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Teléfono</p>
+                        <p className="font-medium">{String(order.customer_snapshot.phone)}</p>
+                      </div>
+                    )}
+                    {order.customer_snapshot?.email && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Email</p>
+                        <p className="font-medium text-sm break-all">{String(order.customer_snapshot.email)}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No hay información del cliente</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Delivery Address */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Dirección de Entrega
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {order.delivery_address && typeof order.delivery_address === 'object' ? (
+                  <>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Dirección</p>
+                      <p className="font-medium text-sm">
+                        {String(order.delivery_address?.street || '')}
+                        {order.delivery_address?.city && `, ${String(order.delivery_address.city)}`}
+                      </p>
+                      {order.delivery_address?.state && (
+                        <p className="text-sm text-muted-foreground">
+                          {String(order.delivery_address.state)}
+                        </p>
+                      )}
+                      {order.delivery_address?.country && (
+                        <p className="text-sm text-muted-foreground">
+                          {String(order.delivery_address.country)}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Coordenadas</p>
+                      <p className="font-mono text-xs">
+                        {order.delivery_lat}, {order.delivery_lng}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No hay dirección de entrega</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Driver Assignment */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Driver Asignado
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {currentDriver ? (
+                  <div className="space-y-3">
+                    {currentDriver.driver_user ? (
+                      <>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Nombre</p>
+                          <p className="font-medium">
+                            {currentDriver.driver_user.first_name} {currentDriver.driver_user.last_name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Email</p>
+                          <p className="font-medium text-sm break-all">{currentDriver.driver_user.email}</p>
+                        </div>
+                        {currentDriver.driver_user.phone && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Teléfono</p>
+                            <p className="font-medium">{currentDriver.driver_user.phone}</p>
+                          </div>
+                        )}
+                        <Separator />
+                      </>
+                    ) : null}
+                    {(() => {
+                      const driver = currentDriver.driver_snapshot as Record<string, unknown>;
+                      return (
+                        <>
+                          {driver.driving_license && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Licencia</p>
+                              <p className="font-medium text-sm">{String(driver.driving_license)}</p>
+                            </div>
+                          )}
+                          {driver.work_type && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Tipo de Trabajo</p>
+                              <Badge variant="outline" className="text-xs">
+                                {String(driver.work_type)}
+                              </Badge>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Asignado el</p>
+                      <p className="font-medium text-sm">{formatDate(currentDriver.assigned_at || currentDriver.created_at)}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Truck className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground">No hay driver asignado</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Branch Assignment */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Sucursal Asignada
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {currentBranch && currentBranch.branch_snapshot && typeof currentBranch.branch_snapshot === 'object' ? (
+                  (() => {
+                    const branch = currentBranch.branch_snapshot as Record<string, unknown>;
+                    return (
+                      <div className="space-y-3">
+                        {branch.name && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Nombre</p>
+                            <p className="font-medium">{String(branch.name)}</p>
+                          </div>
+                        )}
+                        {branch.address && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Dirección</p>
+                            <p className="font-medium text-sm">{String(branch.address)}</p>
+                          </div>
+                        )}
+                        {branch.contact_phone && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Teléfono</p>
+                            <p className="font-medium text-sm">{String(branch.contact_phone)}</p>
+                          </div>
+                        )}
+                        {branch.is_main !== undefined && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Tipo</p>
+                            <Badge variant={branch.is_main ? 'default' : 'outline'} className="text-xs">
+                              {branch.is_main ? 'Principal' : 'Secundaria'}
+                            </Badge>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Asignada el</p>
+                          <p className="font-medium text-sm">{formatDate(currentBranch.assigned_at || currentBranch.created_at)}</p>
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="text-center py-4">
+                    <Building2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground">No hay sucursal asignada</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Timeline */}
+        {order && <OrderTimeline order={order} />}
+      </div>
     </PermissionGuard>
   );
 }
-

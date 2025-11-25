@@ -6,7 +6,15 @@ import { z } from 'zod';
 import { useOrderRating } from '@/lib/hooks/use-orders';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -28,14 +36,13 @@ export function RatingForm({ orderId, onSuccess }: RatingFormProps) {
   const { toast } = useToast();
   const orderRating = useOrderRating();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RatingFormData>({
+  const form = useForm<RatingFormData>({
     resolver: zodResolver(ratingSchema),
     defaultValues: {
       customer_rating: 5,
+      driver_rating: undefined,
+      customer_comment: '',
+      driver_comment: '',
     },
   });
 
@@ -71,60 +78,88 @@ export function RatingForm({ orderId, onSuccess }: RatingFormProps) {
         <CardDescription>Califica la orden y el servicio de entrega</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="customer_rating">Calificación del Cliente * (1-5)</Label>
-            <Input
-              id="customer_rating"
-              type="number"
-              min="1"
-              max="5"
-              {...register('customer_rating', { valueAsNumber: true })}
-              disabled={isPending}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="customer_rating"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Calificación del Cliente * (1-5)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="5"
+                      disabled={isPending}
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.customer_rating && (
-              <p className="text-sm text-destructive">{errors.customer_rating.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="driver_rating">Calificación del Driver (1-5)</Label>
-            <Input
-              id="driver_rating"
-              type="number"
-              min="1"
-              max="5"
-              {...register('driver_rating', { valueAsNumber: true })}
-              disabled={isPending}
+            <FormField
+              control={form.control}
+              name="driver_rating"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Calificación del Driver (1-5)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="5"
+                      disabled={isPending}
+                      {...field}
+                      value={field.value || ''}
+                      onChange={(e) =>
+                        field.onChange(e.target.value ? parseInt(e.target.value) : undefined)
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="customer_comment">Comentario del Cliente</Label>
-            <textarea
-              id="customer_comment"
-              {...register('customer_comment')}
-              disabled={isPending}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            <FormField
+              control={form.control}
+              name="customer_comment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Comentario del Cliente</FormLabel>
+                  <FormControl>
+                    <Textarea disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="driver_comment">Comentario del Driver</Label>
-            <textarea
-              id="driver_comment"
-              {...register('driver_comment')}
-              disabled={isPending}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            <FormField
+              control={form.control}
+              name="driver_comment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Comentario del Driver</FormLabel>
+                  <FormControl>
+                    <Textarea disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Registrando...' : 'Enviar Calificación'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-4">
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Registrando...' : 'Enviar Calificación'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import DashboardPage from '../page';
 import { useDashboardKPIs } from '@/lib/hooks/use-dashboard-kpis';
 import { useOrdersReport } from '@/lib/hooks/use-orders-report';

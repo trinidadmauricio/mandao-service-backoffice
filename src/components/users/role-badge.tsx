@@ -5,9 +5,9 @@ interface RoleBadgeProps {
   role: UserRole;
 }
 
-const roleColors: Record<UserRole, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+const roleColors: Record<UserRole, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info'> = {
   OWNER: 'default',
-  SUPERVISOR: 'secondary',
+  SUPERVISOR: 'info',
   MERCHANT_USER: 'outline',
   CUSTOMER: 'outline',
 };

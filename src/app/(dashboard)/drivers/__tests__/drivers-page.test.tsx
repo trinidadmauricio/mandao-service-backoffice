@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import DriversPage from '../page';
 import { useDrivers, useDeleteDriver } from '@/lib/hooks/use-drivers';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -62,7 +62,7 @@ describe('DriversPage', () => {
     ];
 
     mockUseDrivers.mockReturnValue({
-      data: mockDrivers as any,
+      data: { data: mockDrivers, total: mockDrivers.length },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useDrivers>);
@@ -78,7 +78,7 @@ describe('DriversPage', () => {
     mockUseDeleteDriver.mockReturnValue({
       mutateAsync: mockMutate,
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useDeleteDriver>);
 
     render(<DriversPage />);
 

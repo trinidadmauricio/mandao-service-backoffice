@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import BranchesPage from '../page';
 import { useBranches, useDeleteBranch } from '@/lib/hooks/use-branches';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -53,7 +53,7 @@ describe('BranchesPage', () => {
     ];
 
     mockUseBranches.mockReturnValue({
-      data: mockBranches as any,
+      data: mockBranches,
       isLoading: false,
       error: null,
     } as ReturnType<typeof useBranches>);
@@ -69,7 +69,7 @@ describe('BranchesPage', () => {
     mockUseDeleteBranch.mockReturnValue({
       mutateAsync: mockMutate,
       isPending: false,
-    } as any);
+    } as ReturnType<typeof useDeleteBranch>);
 
     render(<BranchesPage />);
 

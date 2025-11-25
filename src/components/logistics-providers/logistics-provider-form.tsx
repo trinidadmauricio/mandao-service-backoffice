@@ -9,8 +9,22 @@ import {
   type LogisticsProvider,
 } from '@/lib/hooks/use-logistics-providers';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 
 const logisticsProviderSchema = z.object({
@@ -35,11 +49,7 @@ export function LogisticsProviderForm({ initialData, onSuccess }: LogisticsProvi
   const updateProvider = useUpdateLogisticsProvider();
   const { toast } = useToast();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LogisticsProviderFormData>({
+  const form = useForm<LogisticsProviderFormData>({
     resolver: zodResolver(logisticsProviderSchema),
     defaultValues: initialData
       ? {
@@ -52,6 +62,11 @@ export function LogisticsProviderForm({ initialData, onSuccess }: LogisticsProvi
           status: initialData.status,
         }
       : {
+          company_name: '',
+          tax_id: '',
+          representative_name: '',
+          representative_phone: '',
+          representative_document: '',
           verification_status: 'PENDING',
           status: 'ACTIVE',
         },
@@ -103,115 +118,152 @@ export function LogisticsProviderForm({ initialData, onSuccess }: LogisticsProvi
     }
   };
 
+  const isPending = createProvider.isPending || updateProvider.isPending;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="company_name">Nombre de la Empresa *</Label>
-          <Input
-            id="company_name"
-            {...register('company_name')}
-            disabled={createProvider.isPending || updateProvider.isPending}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="company_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre de la Empresa *</FormLabel>
+                <FormControl>
+                  <Input disabled={isPending} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.company_name && (
-            <p className="text-sm text-destructive">{errors.company_name.message}</p>
-          )}
+
+          <FormField
+            control={form.control}
+            name="tax_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>RUC/NIT *</FormLabel>
+                <FormControl>
+                  <Input disabled={isPending} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="tax_id">RUC/NIT *</Label>
-          <Input
-            id="tax_id"
-            {...register('tax_id')}
-            disabled={createProvider.isPending || updateProvider.isPending}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="representative_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre del Representante Legal *</FormLabel>
+                <FormControl>
+                  <Input disabled={isPending} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.tax_id && (
-            <p className="text-sm text-destructive">{errors.tax_id.message}</p>
-          )}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="representative_name">Nombre del Representante Legal *</Label>
-          <Input
-            id="representative_name"
-            {...register('representative_name')}
-            disabled={createProvider.isPending || updateProvider.isPending}
+          <FormField
+            control={form.control}
+            name="representative_phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Teléfono del Representante *</FormLabel>
+                <FormControl>
+                  <Input disabled={isPending} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.representative_name && (
-            <p className="text-sm text-destructive">{errors.representative_name.message}</p>
-          )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="representative_phone">Teléfono del Representante *</Label>
-          <Input
-            id="representative_phone"
-            {...register('representative_phone')}
-            disabled={createProvider.isPending || updateProvider.isPending}
-          />
-          {errors.representative_phone && (
-            <p className="text-sm text-destructive">{errors.representative_phone.message}</p>
+        <FormField
+          control={form.control}
+          name="representative_document"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Documento del Representante *</FormLabel>
+              <FormControl>
+                <Input disabled={isPending} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="representative_document">Documento del Representante *</Label>
-        <Input
-          id="representative_document"
-          {...register('representative_document')}
-          disabled={createProvider.isPending || updateProvider.isPending}
         />
-        {errors.representative_document && (
-          <p className="text-sm text-destructive">{errors.representative_document.message}</p>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="verification_status">Estado de Verificación</Label>
-          <select
-            id="verification_status"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            {...register('verification_status')}
-            disabled={createProvider.isPending || updateProvider.isPending}
-          >
-            <option value="PENDING">Pendiente</option>
-            <option value="VERIFIED">Verificado</option>
-            <option value="REJECTED">Rechazado</option>
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="verification_status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado de Verificación</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value || 'PENDING'}
+                  disabled={isPending}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un estado" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pendiente</SelectItem>
+                    <SelectItem value="VERIFIED">Verificado</SelectItem>
+                    <SelectItem value="REJECTED">Rechazado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value || 'ACTIVE'}
+                  disabled={isPending}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un estado" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Activo</SelectItem>
+                    <SelectItem value="SUSPENDED">Suspendido</SelectItem>
+                    <SelectItem value="INACTIVE">Inactivo</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="status">Estado</Label>
-          <select
-            id="status"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            {...register('status')}
-            disabled={createProvider.isPending || updateProvider.isPending}
-          >
-            <option value="ACTIVE">Activo</option>
-            <option value="SUSPENDED">Suspendido</option>
-            <option value="INACTIVE">Inactivo</option>
-          </select>
+        <div className="flex justify-end space-x-2">
+          <Button type="submit" disabled={isPending}>
+            {isPending
+              ? 'Guardando...'
+              : isEditing
+              ? 'Actualizar Proveedor'
+              : 'Crear Proveedor'}
+          </Button>
         </div>
-      </div>
-
-      <div className="flex justify-end space-x-2">
-        <Button
-          type="submit"
-          disabled={createProvider.isPending || updateProvider.isPending}
-        >
-          {createProvider.isPending || updateProvider.isPending
-            ? 'Guardando...'
-            : isEditing
-            ? 'Actualizar Proveedor'
-            : 'Crear Proveedor'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 }
 

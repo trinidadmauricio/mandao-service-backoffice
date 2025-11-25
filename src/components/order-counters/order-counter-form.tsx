@@ -5,8 +5,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateOrderCounter, useUpdateOrderCounter, type OrderCounter } from '@/lib/hooks/use-order-counters';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 
 const orderCounterSchema = z.object({
@@ -28,20 +37,20 @@ export function OrderCounterForm({ tenantId, initialData }: OrderCounterFormProp
   const updateCounter = useUpdateOrderCounter();
   const { toast } = useToast();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<OrderCounterFormData>({
+  const form = useForm<OrderCounterFormData>({
     resolver: zodResolver(orderCounterSchema),
     defaultValues: initialData
       ? {
           prefix: initialData.prefix || '',
           padding_length: initialData.padding_length,
           current_value: initialData.current_value,
+          reset: false,
         }
       : {
+          prefix: '',
           padding_length: 6,
+          current_value: undefined,
+          reset: false,
         },
   });
 
@@ -83,92 +92,119 @@ export function OrderCounterForm({ tenantId, initialData }: OrderCounterFormProp
     }
   };
 
+  const isPending = createCounter.isPending || updateCounter.isPending;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="prefix">Prefijo (Opcional, max 10 caracteres)</Label>
-          <Input
-            id="prefix"
-            placeholder="Ej: ORD, PO"
-            maxLength={10}
-            {...register('prefix')}
-            disabled={createCounter.isPending || updateCounter.isPending}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="prefix"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Prefijo (Opcional, max 10 caracteres)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Ej: ORD, PO"
+                    maxLength={10}
+                    disabled={isPending}
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Prefijo para los números de orden (ej: ORD-000001)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.prefix && (
-            <p className="text-sm text-destructive">{errors.prefix.message}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Prefijo para los números de orden (ej: ORD-000001)
-          </p>
+
+          <FormField
+            control={form.control}
+            name="padding_length"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Longitud de Padding (1-10)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    disabled={isPending}
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Número de dígitos para el padding (ej: 6 → 000001)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="padding_length">Longitud de Padding (1-10)</Label>
-          <Input
-            id="padding_length"
-            type="number"
-            min="1"
-            max="10"
-            {...register('padding_length', { valueAsNumber: true })}
-            disabled={createCounter.isPending || updateCounter.isPending}
+        {isEditing && (
+          <FormField
+            control={form.control}
+            name="current_value"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor Actual (Opcional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    disabled={isPending}
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) =>
+                      field.onChange(e.target.value ? parseInt(e.target.value) : undefined)
+                    }
+                  />
+                </FormControl>
+                <FormDescription>
+                  Establece un nuevo valor para el contador manualmente
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.padding_length && (
-            <p className="text-sm text-destructive">{errors.padding_length.message}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Número de dígitos para el padding (ej: 6 → 000001)
-          </p>
-        </div>
-      </div>
+        )}
 
-      {isEditing && (
-        <div className="space-y-2">
-          <Label htmlFor="current_value">Valor Actual (Opcional)</Label>
-          <Input
-            id="current_value"
-            type="number"
-            min="0"
-            {...register('current_value', { valueAsNumber: true })}
-            disabled={createCounter.isPending || updateCounter.isPending}
+        {isEditing && (
+          <FormField
+            control={form.control}
+            name="reset"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value || false}
+                    onCheckedChange={field.onChange}
+                    disabled={isPending}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Resetear contador a 0</FormLabel>
+                </div>
+              </FormItem>
+            )}
           />
-          {errors.current_value && (
-            <p className="text-sm text-destructive">{errors.current_value.message}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Establece un nuevo valor para el contador manualmente
-          </p>
-        </div>
-      )}
+        )}
 
-      {isEditing && (
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="reset"
-            {...register('reset')}
-            disabled={createCounter.isPending || updateCounter.isPending}
-            className="h-4 w-4 rounded border-gray-300"
-          />
-          <Label htmlFor="reset" className="cursor-pointer">
-            Resetear contador a 0
-          </Label>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isPending}>
+            {isPending
+              ? 'Guardando...'
+              : isEditing
+              ? 'Actualizar Contador'
+              : 'Crear Contador'}
+          </Button>
         </div>
-      )}
-
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={createCounter.isPending || updateCounter.isPending}
-        >
-          {createCounter.isPending || updateCounter.isPending
-            ? 'Guardando...'
-            : isEditing
-            ? 'Actualizar Contador'
-            : 'Crear Contador'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 }
 
