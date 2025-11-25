@@ -290,7 +290,7 @@ export function CreateOrderRetailForm() {
                 Agregar Producto
               </Button>
             </div>
-            {items.map((item, index) => (
+            {items.map((_item, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Producto {index + 1}</h4>
@@ -323,7 +323,7 @@ export function CreateOrderRetailForm() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {products?.map((product) => (
+                            {products?.data?.map((product) => (
                               <SelectItem key={product.id} value={product.id}>
                                 {product.name}
                               </SelectItem>

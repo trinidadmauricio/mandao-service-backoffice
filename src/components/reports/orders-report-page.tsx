@@ -118,7 +118,7 @@ export function OrdersReportPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(report.summary.total_revenue, 'USD')}
+                {formatCurrency(report.summary.total_revenue || 0, 'USD')}
               </div>
             </CardContent>
           </Card>
@@ -128,7 +128,7 @@ export function OrdersReportPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(report.summary.average_order_value, 'USD')}
+                {formatCurrency(report.summary.average_order_value || 0, 'USD')}
               </div>
             </CardContent>
           </Card>
@@ -175,7 +175,7 @@ export function OrdersReportPage() {
                   <div className="flex items-center space-x-4">
                     <Badge variant="outline">{order.status}</Badge>
                     <p className="font-medium">
-                      {formatCurrency(order.total_amount, 'USD')}
+                      {formatCurrency(order.total_amount || 0, 'USD')}
                     </p>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useTenant, useUpdateTenant } from '@/lib/hooks/use-tenant';
+import { useTenant, useUpdateTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ type RetailSettingsFormData = z.infer<typeof retailSettingsSchema>;
 
 export default function TenantRetailSettingsPage() {
   const { user } = useAuth();
-  const { data: tenant, isLoading } = useTenant(user?.tenant_id || '');
+  const { tenant, isLoading } = useTenant(user?.tenant_id || '');
   const updateTenant = useUpdateTenant();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -48,15 +48,17 @@ export default function TenantRetailSettingsPage() {
     setError(null);
     setSuccess(false);
 
+    const tenantData = tenant as unknown as Tenant & { settings?: Record<string, unknown> };
+
     try {
       await updateTenant.mutateAsync({
-        id: tenant.id,
+        id: tenantData.id,
         data: {
           settings: {
-            ...(tenant.settings as Record<string, unknown> || {}),
+            ...(tenantData.settings || {}),
             retail: data,
           },
-        },
+        } as Partial<Tenant> & { settings?: Record<string, unknown> },
       });
       setSuccess(true);
     } catch (err) {

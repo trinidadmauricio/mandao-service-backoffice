@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrency, type CurrencyCode } from '@/lib/utils/currency';
 
 const refundSchema = z.object({
   amount: z.number().min(0.01, 'El monto debe ser mayor a 0').optional(),
@@ -67,7 +67,7 @@ export function RefundDialog({
       });
       toast({
         title: 'Reembolso procesado',
-        description: `Reembolso de ${formatCurrency(data.amount || transactionAmount, currency)} procesado exitosamente.`,
+        description: `Reembolso de ${formatCurrency(data.amount || transactionAmount, currency as CurrencyCode)} procesado exitosamente.`,
       });
       setOpen(false);
     } catch (error: unknown) {
@@ -100,7 +100,7 @@ export function RefundDialog({
             <Label htmlFor="transaction_info">Transacción</Label>
             <div className="p-3 bg-muted rounded-md">
               <p className="text-sm">
-                Monto original: <span className="font-medium">{formatCurrency(transactionAmount, currency)}</span>
+                Monto original: <span className="font-medium">{formatCurrency(transactionAmount, currency as CurrencyCode)}</span>
               </p>
               <p className="text-xs text-muted-foreground mt-1">Orden: {orderId.substring(0, 8)}...</p>
             </div>
@@ -128,7 +128,7 @@ export function RefundDialog({
             )}
             {refundAmount && refundAmount <= transactionAmount && (
               <p className="text-xs text-muted-foreground">
-                Reembolso: {formatCurrency(refundAmount, currency)}
+                Reembolso: {formatCurrency(refundAmount, currency as CurrencyCode)}
               </p>
             )}
           </div>

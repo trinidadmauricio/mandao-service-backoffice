@@ -186,13 +186,13 @@ export default function UserDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   Fecha de Creación
                 </p>
-                <p className="font-medium">{formatDate(user.created_at)}</p>
+                <p className="font-medium">{user.created_at ? formatDate(user.created_at) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
                   Última Actualización
                 </p>
-                <p className="font-medium">{formatDate(user.updated_at)}</p>
+                <p className="font-medium">{user.updated_at ? formatDate(user.updated_at) : 'N/A'}</p>
               </div>
             </CardContent>
           </Card>

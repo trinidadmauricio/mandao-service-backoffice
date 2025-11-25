@@ -296,7 +296,7 @@ export function CreateOrderOnDemandForm() {
                 Agregar Item
               </Button>
             </div>
-            {items.map((item, index) => (
+            {items.map((_item, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Item {index + 1}</h4>

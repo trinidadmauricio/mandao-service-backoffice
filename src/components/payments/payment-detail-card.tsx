@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils/date';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrency, type CurrencyCode } from '@/lib/utils/currency';
 import type { PaymentTransaction } from '@/lib/hooks/use-payments';
 import { RefundDialog } from './refund-dialog';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -61,7 +61,7 @@ export function PaymentDetailCard({ payment, orderId }: PaymentDetailCardProps) 
         <div>
           <p className="text-sm text-muted-foreground">Monto</p>
           <p className="text-2xl font-bold">
-            {formatCurrency(payment.amount, payment.currency)}
+            {formatCurrency(payment.amount, payment.currency as CurrencyCode)}
           </p>
         </div>
 

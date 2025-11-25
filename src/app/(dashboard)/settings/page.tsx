@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useTenant, useUpdateTenant } from '@/lib/hooks/use-tenant';
+import { useTenant, useUpdateTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,10 +22,12 @@ type TenantFormData = z.infer<typeof tenantSchema>;
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { data: tenant, isLoading } = useTenant(user?.tenant_id || '');
+  const { tenant, isLoading } = useTenant(user?.tenant_id || '');
   const updateTenant = useUpdateTenant();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const tenantData = tenant as unknown as Tenant | null;
 
   const {
     register,
@@ -33,26 +35,26 @@ export default function SettingsPage() {
     formState: { errors },
   } = useForm<TenantFormData>({
     resolver: zodResolver(tenantSchema),
-    values: tenant
+    values: tenantData
       ? {
-          name: tenant.name,
-          default_currency: tenant.default_currency,
-          default_locale: tenant.default_locale,
+          name: tenantData.name,
+          default_currency: tenantData.default_currency,
+          default_locale: tenantData.default_locale,
         }
       : undefined,
   });
 
   const onSubmit = async (data: TenantFormData) => {
-    if (!tenant) return;
+    if (!tenantData) return;
 
     setError(null);
     setSuccess(false);
 
     try {
       await updateTenant.mutateAsync({
-        id: tenant.id,
+        id: tenantData.id,
         data,
-      });
+      } as { id: string; data: Partial<Tenant> });
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al actualizar la configuración');

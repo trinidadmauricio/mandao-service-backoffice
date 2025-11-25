@@ -20,7 +20,7 @@ export function useTenant(tenantId?: string) {
   const { user } = useAuth();
   const targetTenantId = tenantId || user?.tenant_id;
 
-  const { data: tenant, isLoading, error } = useQuery<Tenant>({
+  const { data: tenant, isLoading, error } = useQuery<Tenant | null>({
     queryKey: ['tenant', targetTenantId],
     queryFn: async () => {
       if (!targetTenantId) {

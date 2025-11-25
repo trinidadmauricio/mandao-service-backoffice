@@ -1,7 +1,7 @@
 'use client';
 
 import { useSubscriptionLimits } from '@/lib/hooks/use-subscriptions';
-import { useTenant } from '@/lib/hooks/use-tenant';
+import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,9 +11,17 @@ import { StartTrialDialog } from '@/components/subscriptions/start-trial-dialog'
 import { ConvertTrialDialog } from '@/components/subscriptions/convert-trial-dialog';
 import { CreditCard } from 'lucide-react';
 
+type TenantWithSubscription = Omit<Tenant, 'subscription_status'> & {
+  subscription_status: Tenant['subscription_status'] | 'EXPIRED';
+  subscription_plan_id?: string;
+  subscription_expires_at?: string;
+};
+
 export default function SubscriptionSettingsPage() {
   const { data: limits, isLoading: isLoadingLimits } = useSubscriptionLimits();
-  const { data: tenant, isLoading: isLoadingTenant } = useTenant();
+  const { tenant, isLoading: isLoadingTenant } = useTenant();
+
+  const tenantData = tenant as unknown as TenantWithSubscription | null;
 
   if (isLoadingLimits || isLoadingTenant) {
     return (
@@ -46,46 +54,46 @@ export default function SubscriptionSettingsPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Plan Actual</CardTitle>
               <div className="flex items-center space-x-2">
-                {tenant?.subscription_status === 'TRIAL' && (
-                  <ConvertTrialDialog currentPlanName={tenant.subscription_plan_id} />
+                {tenantData?.subscription_status === 'TRIAL' && (
+                  <ConvertTrialDialog currentPlanName={tenantData.subscription_plan_id} />
                 )}
-                {!tenant?.subscription_plan_id && <StartTrialDialog />}
-                {tenant?.subscription_status === 'ACTIVE' && <ChangePlanDialog />}
+                {!tenantData?.subscription_plan_id && <StartTrialDialog />}
+                {tenantData?.subscription_status === 'ACTIVE' && <ChangePlanDialog />}
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {tenant?.subscription_plan_id ? (
+            {tenantData?.subscription_plan_id ? (
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <CreditCard className="h-8 w-8 text-primary" />
                   <div>
-                    <p className="font-medium text-lg">Plan ID: {tenant.subscription_plan_id}</p>
+                    <p className="font-medium text-lg">Plan ID: {tenantData.subscription_plan_id}</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      {tenant.subscription_status === 'TRIAL' && (
+                      {tenantData.subscription_status === 'TRIAL' && (
                         <Badge variant="outline">
                           Período de Prueba
                         </Badge>
                       )}
-                      {tenant.subscription_status === 'ACTIVE' && (
+                      {tenantData.subscription_status === 'ACTIVE' && (
                         <Badge variant="default">
                           Activo
                         </Badge>
                       )}
-                      {tenant.subscription_status === 'CANCELLED' && (
+                      {tenantData.subscription_status === 'CANCELLED' && (
                         <Badge variant="destructive">
                           Cancelado
                         </Badge>
                       )}
-                      {tenant.subscription_status === 'EXPIRED' && (
+                      {tenantData.subscription_status === 'EXPIRED' && (
                         <Badge variant="outline">
                           Expirado
                         </Badge>
                       )}
                     </p>
-                    {tenant.subscription_expires_at && (
+                    {tenantData.subscription_expires_at && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        Expira: {new Date(tenant.subscription_expires_at).toLocaleDateString()}
+                        Expira: {new Date(tenantData.subscription_expires_at).toLocaleDateString()}
                       </p>
                     )}
                   </div>

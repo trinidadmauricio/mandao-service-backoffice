@@ -119,7 +119,7 @@ export function useExportOrdersCSV(filters?: OrdersReportFilters) {
     });
     
     // Crear un blob y descargarlo
-    const blob = new Blob([response.data], { type: 'text/csv' });
+    const blob = new Blob([response.data as BlobPart], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

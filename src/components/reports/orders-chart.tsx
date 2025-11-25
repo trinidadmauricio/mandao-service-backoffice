@@ -129,7 +129,7 @@ export function OrdersChart({ data }: OrdersChartProps) {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {ordersByStatusData.map((entry, index) => (
+                  {ordersByStatusData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
