@@ -40,7 +40,7 @@ export function useDrivers(filters?: DriversFilters) {
         data: drivers,
         total: response.data.total ?? drivers.length,
         page: response.data.page ?? filters?.page ?? 1,
-        limit: response.data.limit ?? filters?.limit ?? drivers.length || 10,
+        limit: response.data.limit ?? filters?.limit ?? (drivers.length || 10),
         totalPages: response.data.totalPages ?? Math.ceil((response.data.total ?? drivers.length) / (response.data.limit ?? filters?.limit ?? 10)),
       } as DriversResponse;
     },

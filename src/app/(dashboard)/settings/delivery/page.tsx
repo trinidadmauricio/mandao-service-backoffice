@@ -46,20 +46,18 @@ export default function TenantDeliverySettingsPage() {
 
     setError(null);
     setSuccess(false);
-
-    if (!tenant) return;
     
-    const tenantData = tenant as unknown as Tenant;
+    const tenantData = tenant as unknown as Tenant & { settings?: Record<string, unknown> };
     
     try {
       await updateTenant.mutateAsync({
         id: tenantData.id,
         data: {
           settings: {
-            ...(tenantData.settings as Record<string, unknown> || {}),
+            ...(tenantData.settings || {}),
             delivery: data,
           },
-        } as any,
+        } as Partial<Tenant> & { settings?: Record<string, unknown> },
       });
       setSuccess(true);
     } catch (err) {
