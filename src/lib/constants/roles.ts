@@ -4,7 +4,7 @@
  * También incluye roles de SaaS: SAAS_ADMIN, SAAS_EDITOR
  */
 
-export type UserRole = 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
+export type UserRole = 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'DRIVER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
 
 export interface Permission {
   resource: string;
@@ -128,6 +128,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'users', action: 'update' },
     // Reportes (solo de sus órdenes)
     { resource: 'reports', action: 'read' },
+  ],
+  DRIVER: [
+    // DRIVER no tiene permisos en el backoffice - solo acceso al link de rastreo público
   ],
   CUSTOMER: [
     // Solo lectura de órdenes propias (solo para storefront, no backoffice)
