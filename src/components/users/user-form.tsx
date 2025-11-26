@@ -27,6 +27,9 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
+import { RefreshCw, Copy, Check, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
+import { USER_ROLE } from '@/lib/constants/roles';
 
 const userSchema = z
   .object({
@@ -35,7 +38,15 @@ const userSchema = z
     first_name: z.string().min(1, 'El nombre es requerido'),
     last_name: z.string().min(1, 'El apellido es requerido'),
     phone: z.string().optional(),
-    role: z.enum(['SAAS_ADMIN', 'SAAS_EDITOR', 'OWNER', 'SUPERVISOR', 'MERCHANT_USER', 'LOGISTICS_PROVIDER', 'DRIVER']),
+    role: z.enum([
+      USER_ROLE.SAAS_ADMIN,
+      USER_ROLE.SAAS_EDITOR,
+      USER_ROLE.OWNER,
+      USER_ROLE.SUPERVISOR,
+      USER_ROLE.MERCHANT_USER,
+      USER_ROLE.LOGISTICS_PROVIDER,
+      USER_ROLE.DRIVER,
+    ]),
     status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).default('ACTIVE'),
   })
   .refine(() => {
@@ -50,6 +61,37 @@ interface UserFormProps {
   userId?: string;
 }
 
+/**
+ * Genera una contraseña segura aleatoria
+ * @param length Longitud de la contraseña (por defecto 12)
+ * @returns Contraseña generada
+ */
+function generateSecurePassword(length: number = 12): string {
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const numbers = '0123456789';
+  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const allChars = lowercase + uppercase + numbers + symbols;
+
+  // Asegurar que tenga al menos un carácter de cada tipo
+  let password = '';
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += symbols[Math.floor(Math.random() * symbols.length)];
+
+  // Completar el resto de la longitud
+  for (let i = password.length; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  // Mezclar los caracteres
+  return password
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('');
+}
+
 export function UserForm({ userId }: UserFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -58,12 +100,15 @@ export function UserForm({ userId }: UserFormProps) {
   const { data: user, isLoading: isLoadingUser } = useUser(userId || '');
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const [copied, setCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       status: 'ACTIVE',
-      role: 'MERCHANT_USER',
+      role: USER_ROLE.MERCHANT_USER,
       email: '',
       password: '',
       first_name: '',
@@ -76,13 +121,26 @@ export function UserForm({ userId }: UserFormProps) {
   useEffect(() => {
     if (user && isEditing) {
       // Filtrar CUSTOMER ya que no se puede editar desde el backoffice
-      const validRole = user.role === 'CUSTOMER' ? 'MERCHANT_USER' : user.role;
+      const validRole = user.role === USER_ROLE.CUSTOMER ? USER_ROLE.MERCHANT_USER : user.role;
+      // Asegurar que el rol sea uno de los permitidos en el schema
+      const allowedRoles = [
+        USER_ROLE.SAAS_ADMIN,
+        USER_ROLE.SAAS_EDITOR,
+        USER_ROLE.OWNER,
+        USER_ROLE.SUPERVISOR,
+        USER_ROLE.MERCHANT_USER,
+        USER_ROLE.LOGISTICS_PROVIDER,
+        USER_ROLE.DRIVER,
+      ] as const;
+      const roleForForm = allowedRoles.includes(validRole as typeof allowedRoles[number])
+        ? (validRole as typeof allowedRoles[number])
+        : USER_ROLE.MERCHANT_USER;
       form.reset({
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
         phone: user.phone || '',
-        role: validRole as 'SAAS_ADMIN' | 'SAAS_EDITOR' | 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'DRIVER',
+        role: roleForForm,
         status: (user.status as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED') || 'ACTIVE',
         password: '', // No cargar password al editar
       });
@@ -109,9 +167,9 @@ export function UserForm({ userId }: UserFormProps) {
         ...(isEditing && !data.password && { password: undefined }),
         // Si se está creando un SUPERVISOR y el usuario actual es LOGISTICS_PROVIDER,
         // asignar automáticamente su logistics_provider_id
-        ...(data.role === 'SUPERVISOR' && 
+        ...(data.role === USER_ROLE.SUPERVISOR && 
             !isEditing && 
-            currentUser?.role === 'LOGISTICS_PROVIDER' && 
+            currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER && 
             currentUser?.logistics_provider_id && {
               logistics_provider_id: currentUser.logistics_provider_id,
             }),
@@ -224,9 +282,84 @@ export function UserForm({ userId }: UserFormProps) {
                   <FormItem>
                     <FormLabel>Contraseña *</FormLabel>
                     <FormControl>
-                      <Input type="password" disabled={isPending} {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          disabled={isPending}
+                          className="pr-24"
+                          {...field}
+                        />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => setShowPassword(!showPassword)}
+                            disabled={isPending}
+                            title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              const newPassword = generateSecurePassword(12);
+                              field.onChange(newPassword);
+                              toast({
+                                title: 'Contraseña generada',
+                                description: 'Se ha generado una contraseña segura. Haz clic en el icono de copiar para copiarla.',
+                              });
+                            }}
+                            disabled={isPending}
+                            title="Generar contraseña segura"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(field.value || '');
+                                  setCopied(true);
+                                  toast({
+                                    title: 'Contraseña copiada',
+                                    description: 'La contraseña se ha copiado al portapapeles.',
+                                  });
+                                  setTimeout(() => setCopied(false), 2000);
+                                } catch {
+                                  toast({
+                                    title: 'Error',
+                                    description: 'No se pudo copiar la contraseña.',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                              disabled={isPending}
+                              title="Copiar contraseña"
+                            >
+                              {copied ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </FormControl>
-                    <FormDescription>Mínimo 8 caracteres</FormDescription>
+                    <FormDescription>Mínimo 8 caracteres. Usa el botón de generar para crear una contraseña segura.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -241,10 +374,85 @@ export function UserForm({ userId }: UserFormProps) {
                   <FormItem>
                     <FormLabel>Nueva Contraseña (opcional)</FormLabel>
                     <FormControl>
-                      <Input type="password" disabled={isPending} {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showEditPassword ? 'text' : 'password'}
+                          disabled={isPending}
+                          className="pr-24"
+                          {...field}
+                        />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => setShowEditPassword(!showEditPassword)}
+                            disabled={isPending}
+                            title={showEditPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          >
+                            {showEditPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              const newPassword = generateSecurePassword(12);
+                              field.onChange(newPassword);
+                              toast({
+                                title: 'Contraseña generada',
+                                description: 'Se ha generado una contraseña segura. Haz clic en el icono de copiar para copiarla.',
+                              });
+                            }}
+                            disabled={isPending}
+                            title="Generar contraseña segura"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(field.value || '');
+                                  setCopied(true);
+                                  toast({
+                                    title: 'Contraseña copiada',
+                                    description: 'La contraseña se ha copiado al portapapeles.',
+                                  });
+                                  setTimeout(() => setCopied(false), 2000);
+                                } catch {
+                                  toast({
+                                    title: 'Error',
+                                    description: 'No se pudo copiar la contraseña.',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                              disabled={isPending}
+                              title="Copiar contraseña"
+                            >
+                              {copied ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </FormControl>
                     <FormDescription>
-                      Deja en blanco si no deseas cambiar la contraseña
+                      Deja en blanco si no deseas cambiar la contraseña. Usa el botón de generar para crear una contraseña segura.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -281,27 +489,27 @@ export function UserForm({ userId }: UserFormProps) {
                       </FormControl>
                       <SelectContent>
                         {/* Roles visibles para SAAS_ADMIN y SAAS_EDITOR */}
-                        {(currentUser?.role === 'SAAS_ADMIN' || currentUser?.role === 'SAAS_EDITOR') && (
+                        {(currentUser?.role === USER_ROLE.SAAS_ADMIN || currentUser?.role === USER_ROLE.SAAS_EDITOR) && (
                           <>
-                            <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
-                            <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
-                            <SelectItem value="OWNER">Propietario</SelectItem>
-                            <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
-                            <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
+                            <SelectItem value={USER_ROLE.SAAS_ADMIN}>Administrador SAAS</SelectItem>
+                            <SelectItem value={USER_ROLE.SAAS_EDITOR}>Editor SAAS</SelectItem>
+                            <SelectItem value={USER_ROLE.OWNER}>Propietario</SelectItem>
+                            <SelectItem value={USER_ROLE.MERCHANT_USER}>Usuario del Comercio</SelectItem>
+                            <SelectItem value={USER_ROLE.LOGISTICS_PROVIDER}>Proveedor Logístico</SelectItem>
                           </>
                         )}
 
                         {/* Roles visibles para OWNER */}
-                        {currentUser?.role === 'OWNER' && (
+                        {currentUser?.role === USER_ROLE.OWNER && (
                           <>
-                            <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
+                            <SelectItem value={USER_ROLE.MERCHANT_USER}>Usuario del Comercio</SelectItem>
                           </>
                         )}
 
                         {/* Roles visibles para LOGISTICS_PROVIDER */}
-                        {currentUser?.role === 'LOGISTICS_PROVIDER' && (
+                        {currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER && (
                           <>
-                            <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                            <SelectItem value={USER_ROLE.SUPERVISOR}>Supervisor</SelectItem>
                           </>
                         )}
 

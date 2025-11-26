@@ -2,9 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { LatLng } from 'leaflet';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useGeocodingSearch, useGeocodingReverse } from '@/lib/hooks/use-geocoding';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { Search, MapPin } from 'lucide-react';
@@ -12,6 +10,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
 // Fix para iconos de Leaflet en Next.js
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',

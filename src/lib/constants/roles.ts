@@ -6,6 +6,20 @@
 
 export type UserRole = 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'DRIVER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
 
+/**
+ * Constantes de roles para evitar usar strings literales
+ */
+export const USER_ROLE = {
+  SAAS_ADMIN: 'SAAS_ADMIN',
+  SAAS_EDITOR: 'SAAS_EDITOR',
+  OWNER: 'OWNER',
+  SUPERVISOR: 'SUPERVISOR',
+  MERCHANT_USER: 'MERCHANT_USER',
+  LOGISTICS_PROVIDER: 'LOGISTICS_PROVIDER',
+  DRIVER: 'DRIVER',
+  CUSTOMER: 'CUSTOMER',
+} as const;
+
 export interface Permission {
   resource: string;
   action: 'create' | 'read' | 'update' | 'delete' | 'manage';
@@ -68,11 +82,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   MERCHANT_USER: [
     // Dashboard
     { resource: 'dashboard', action: 'read' },
-    // Órdenes (acceso completo en RETAIL, solo órdenes en ON_DEMAND)
-    { resource: 'orders', action: 'read' },
-    { resource: 'orders', action: 'create' },
-    { resource: 'orders', action: 'update' },
-    { resource: 'orders', action: 'delete' },
+    // Órdenes (acceso completo - puede ver y administrar todas sus órdenes)
+    { resource: 'orders', action: 'manage' },
     // Productos (solo RETAIL)
     { resource: 'products', action: 'read' },
     { resource: 'products', action: 'create' },
@@ -151,14 +162,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
  */
 export function hasPermission(role: UserRole, resource: string, action: Permission['action']): boolean {
   // SAAS_ADMIN y SAAS_EDITOR tienen acceso a todo
-  if (role === 'SAAS_ADMIN' || role === 'SAAS_EDITOR') {
+  if (role === USER_ROLE.SAAS_ADMIN || role === USER_ROLE.SAAS_EDITOR) {
     return true;
   }
 
   const permissions = ROLE_PERMISSIONS[role];
 
   // OWNER tiene acceso a todo EXCEPTO módulos SAAS
-  if (role === 'OWNER') {
+  if (role === USER_ROLE.OWNER) {
     // Si es un módulo SAAS, no permitir acceso automático
     if (
       resource === 'order-counters' ||
@@ -184,12 +195,12 @@ export function hasPermission(role: UserRole, resource: string, action: Permissi
  */
 export function canAccessResource(role: UserRole, resource: string): boolean {
   // SAAS_ADMIN y SAAS_EDITOR tienen acceso a todo
-  if (role === 'SAAS_ADMIN' || role === 'SAAS_EDITOR') {
+  if (role === USER_ROLE.SAAS_ADMIN || role === USER_ROLE.SAAS_EDITOR) {
     return true;
   }
 
   // OWNER tiene acceso a todo EXCEPTO módulos SAAS
-  if (role === 'OWNER') {
+  if (role === USER_ROLE.OWNER) {
     if (
       resource === 'order-counters' ||
       resource === 'payments' ||
@@ -209,12 +220,12 @@ export function canAccessResource(role: UserRole, resource: string): boolean {
  */
 export function getAllowedActions(role: UserRole, resource: string): Permission['action'][] {
   // SAAS_ADMIN y SAAS_EDITOR tienen acceso a todo
-  if (role === 'SAAS_ADMIN' || role === 'SAAS_EDITOR') {
+  if (role === USER_ROLE.SAAS_ADMIN || role === USER_ROLE.SAAS_EDITOR) {
     return ['create', 'read', 'update', 'delete', 'manage'];
   }
 
   // OWNER tiene acceso a todo EXCEPTO módulos SAAS
-  if (role === 'OWNER') {
+  if (role === USER_ROLE.OWNER) {
     if (
       resource === 'order-counters' ||
       resource === 'payments' ||

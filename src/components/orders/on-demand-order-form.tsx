@@ -56,16 +56,21 @@ const onDemandOrderSchema = z.object({
     lng: z.number().min(-180).max(180),
   }),
   pickup_address: z
-    .object({
-      street: z.string().min(1),
-      city: z.string().min(1),
-      state: z.string().optional(),
-      zip_code: z.string().optional(),
-      country: z.string().min(1),
-      lat: z.number().min(-90).max(90),
-      lng: z.number().min(-180).max(180),
-    })
-    .optional(),
+    .union([
+      z.object({
+        street: z.string().min(1),
+        city: z.string().min(1),
+        state: z.string().optional(),
+        zip_code: z.string().optional(),
+        country: z.string().min(1),
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+      }),
+      z.undefined(),
+      z.null(),
+    ])
+    .optional()
+    .nullable(),
   items: z
     .array(
       z.object({
@@ -91,6 +96,63 @@ const onDemandOrderSchema = z.object({
     .min(1, "La fecha de entrega estimada es requerida"),
   priority: z.enum(["NORMAL", "URGENT"]).default("NORMAL"),
   cargo_description: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Validar pickup_address solo si tiene algún valor válido (no undefined, null, o objeto vacío)
+  // Si está presente pero incompleto, validar campos requeridos
+  if (
+    data.pickup_address !== undefined && 
+    data.pickup_address !== null &&
+    typeof data.pickup_address === 'object' &&
+    !Array.isArray(data.pickup_address)
+  ) {
+    const pickup = data.pickup_address;
+    // Solo validar si al menos un campo tiene valor (para evitar validar objetos vacíos del autocompletado)
+    const hasAnyValue = 
+      (pickup.street && pickup.street.trim() !== "") ||
+      (pickup.city && pickup.city.trim() !== "") ||
+      (pickup.country && pickup.country.trim() !== "") ||
+      (typeof pickup.lat === "number" && !isNaN(pickup.lat) && pickup.lat !== 0) ||
+      (typeof pickup.lng === "number" && !isNaN(pickup.lng) && pickup.lng !== 0);
+    
+    // Si tiene algún valor, validar que todos los campos requeridos estén presentes
+    if (hasAnyValue) {
+      if (!pickup.street || pickup.street.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La calle es requerida",
+          path: ["pickup_address", "street"],
+        });
+      }
+      if (!pickup.city || pickup.city.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La ciudad es requerida",
+          path: ["pickup_address", "city"],
+        });
+      }
+      if (!pickup.country || pickup.country.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "El país es requerido",
+          path: ["pickup_address", "country"],
+        });
+      }
+      if (typeof pickup.lat !== "number" || isNaN(pickup.lat) || pickup.lat === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La latitud es requerida",
+          path: ["pickup_address", "lat"],
+        });
+      }
+      if (typeof pickup.lng !== "number" || isNaN(pickup.lng) || pickup.lng === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La longitud es requerida",
+          path: ["pickup_address", "lng"],
+        });
+      }
+    }
+  }
 });
 
 type OnDemandOrderFormData = z.infer<typeof onDemandOrderSchema>;
@@ -148,10 +210,33 @@ export function OnDemandOrderForm() {
 
   const onSubmit = async (data: OnDemandOrderFormData) => {
     try {
+      // Convertir datetime-local a formato ISO para el backend
+      // El backend espera una fecha (z.coerce.date()), así que convertimos a ISO string
+      const formatDateTime = (dateTimeString: string): string => {
+        if (!dateTimeString) return dateTimeString;
+        // Si viene como "2025-11-28T14:32", convertir a ISO completo
+        if (dateTimeString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+          // Agregar segundos y timezone
+          return `${dateTimeString}:00`;
+        }
+        // Si ya tiene formato completo, retornarlo
+        return dateTimeString;
+      };
+
       const submitData = {
         ...data,
-        pickup_address: hasPickup ? data.pickup_address : undefined,
-        scheduled_pickup_at: data.scheduled_pickup_at || undefined,
+        // Convertir a ISO string para que el backend pueda hacer z.coerce.date()
+        estimated_delivery_at: formatDateTime(data.estimated_delivery_at),
+        scheduled_pickup_at: data.scheduled_pickup_at ? formatDateTime(data.scheduled_pickup_at) : undefined,
+        // Solo incluir pickup_address si hasPickup es true y tiene valores válidos
+        pickup_address: hasPickup && data.pickup_address && 
+          data.pickup_address.street && 
+          data.pickup_address.city && 
+          data.pickup_address.country &&
+          typeof data.pickup_address.lat === 'number' &&
+          typeof data.pickup_address.lng === 'number'
+          ? data.pickup_address 
+          : undefined,
         special_instructions: data.special_instructions || undefined,
         cargo_description: data.cargo_description || undefined,
         customer_snapshot: {
@@ -167,6 +252,7 @@ export function OnDemandOrderForm() {
       });
       router.push(`/orders/${result.order.id}`);
     } catch (error: unknown) {
+      console.error('Error al crear orden:', error);
       toast({
         title: "Error",
         description:
@@ -191,7 +277,22 @@ export function OnDemandOrderForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form 
+            onSubmit={form.handleSubmit(onSubmit, (errors) => {
+              // Mostrar errores de validación en consola para debugging
+              console.error('Errores de validación:', errors);
+              // Mostrar toast con errores
+              const firstError = Object.values(errors)[0];
+              if (firstError) {
+                toast({
+                  title: "Error de validación",
+                  description: firstError.message || "Por favor, revisa los campos del formulario.",
+                  variant: "destructive",
+                });
+              }
+            })} 
+            className="space-y-6"
+          >
             {/* Customer Snapshot */}
             <div className="border rounded-lg p-4 space-y-4">
               <h3 className="font-medium">Información del Cliente</h3>
@@ -349,7 +450,27 @@ export function OnDemandOrderForm() {
                 <Checkbox
                   id="has_pickup"
                   checked={hasPickup}
-                  onCheckedChange={(checked) => setHasPickup(!!checked)}
+                  onCheckedChange={(checked) => {
+                    const newValue = !!checked;
+                    setHasPickup(newValue);
+                    // Limpiar pickup_address cuando se desmarca el checkbox
+                    if (!newValue) {
+                      form.setValue("pickup_address", undefined);
+                      // Limpiar errores de validación de pickup_address
+                      form.clearErrors("pickup_address");
+                    } else {
+                      // Inicializar pickup_address cuando se marca el checkbox
+                      form.setValue("pickup_address", {
+                        street: "",
+                        city: "",
+                        state: "",
+                        zip_code: "",
+                        country: "",
+                        lat: 0,
+                        lng: 0,
+                      });
+                    }
+                  }}
                   disabled={isPending}
                 />
                 <FormLabel htmlFor="has_pickup" className="cursor-pointer">
@@ -528,14 +649,27 @@ export function OnDemandOrderForm() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Moneda *</FormLabel>
-                          <FormControl>
-                            <Input
-                              maxLength={3}
-                              placeholder="USD"
-                              disabled={isPending}
-                              {...field}
-                            />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || "USD"}
+                            disabled={isPending}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una moneda" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="USD">USD - Dólar Estadounidense</SelectItem>
+                              <SelectItem value="EUR">EUR - Euro</SelectItem>
+                              <SelectItem value="GTQ">GTQ - Quetzal Guatemalteco</SelectItem>
+                              <SelectItem value="HNL">HNL - Lempira Hondureño</SelectItem>
+                              <SelectItem value="NIO">NIO - Córdoba Nicaragüense</SelectItem>
+                              <SelectItem value="CRC">CRC - Colón Costarricense</SelectItem>
+                              <SelectItem value="PAB">PAB - Balboa Panameño</SelectItem>
+                              <SelectItem value="SVC">SVC - Colón Salvadoreño</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

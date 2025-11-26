@@ -1,13 +1,14 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
+import { USER_ROLE } from '@/lib/constants/roles';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 import { TenantSelector } from './tenant-selector';
 
 export function Header() {
   const { user, logout } = useAuth();
-  const isSAASAdmin = user && (user.role === 'SAAS_ADMIN' || user.role === 'SAAS_EDITOR');
+  const isSAASAdmin = user && (user.role === USER_ROLE.SAAS_ADMIN || user.role === USER_ROLE.SAAS_EDITOR);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">

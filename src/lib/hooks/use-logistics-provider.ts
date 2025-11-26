@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useAuth } from './use-auth';
+import { USER_ROLE } from '../constants/roles';
 
 /**
  * Hook para obtener y validar logistics_provider_id del usuario
@@ -12,7 +13,7 @@ export function useLogisticsProvider() {
   }, [user?.logistics_provider_id]);
 
   const isLogisticsProvider = useMemo(() => {
-    return user?.role === 'LOGISTICS_PROVIDER';
+    return user?.role === USER_ROLE.LOGISTICS_PROVIDER;
   }, [user?.role]);
 
   const validateAccess = useMemo(

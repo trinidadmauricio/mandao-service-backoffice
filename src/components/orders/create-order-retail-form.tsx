@@ -227,7 +227,7 @@ export function CreateOrderRetailForm() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Dirección de Entrega</h3>
-              
+
               {/* Location Picker */}
               <FormField
                 control={form.control}
@@ -244,11 +244,14 @@ export function CreateOrderRetailForm() {
                             ...field.value,
                             lat,
                             lng,
-                            street: address?.street || field.value?.street || '',
-                            city: address?.city || field.value?.city || '',
-                            state: address?.state || field.value?.state || '',
-                            zip_code: address?.zip_code || field.value?.zip_code || '',
-                            country: address?.country || field.value?.country || '',
+                            street:
+                              address?.street || field.value?.street || "",
+                            city: address?.city || field.value?.city || "",
+                            state: address?.state || field.value?.state || "",
+                            zip_code:
+                              address?.zip_code || field.value?.zip_code || "",
+                            country:
+                              address?.country || field.value?.country || "",
                           });
                         }}
                         disabled={createOrder.isPending}

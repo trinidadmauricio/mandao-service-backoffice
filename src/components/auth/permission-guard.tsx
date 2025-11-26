@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useTenant } from '@/lib/hooks/use-tenant';
+import { USER_ROLE } from '@/lib/constants/roles';
 import type { Permission } from '@/lib/constants/roles';
 
 interface PermissionGuardProps {
@@ -39,11 +40,11 @@ export function PermissionGuard({
   // Verificar tipo de tenant si se especifica
   if (allowedTenantTypes) {
     // SAAS roles pueden acceder a todo sin restricciones de tenant type
-    if (role === 'SAAS_ADMIN' || role === 'SAAS_EDITOR') {
+    if (role === USER_ROLE.SAAS_ADMIN || role === USER_ROLE.SAAS_EDITOR) {
       // Permitir acceso
     }
     // LOGISTICS_PROVIDER y SUPERVISOR no tienen tenant, no deben acceder a módulos de catálogo
-    else if (role === 'LOGISTICS_PROVIDER' || role === 'SUPERVISOR') {
+    else if (role === USER_ROLE.LOGISTICS_PROVIDER || role === USER_ROLE.SUPERVISOR) {
       // Si requiere RETAIL, no permitir (LOGISTICS_PROVIDER no tiene catálogo)
       if (allowedTenantTypes.includes('RETAIL') && !allowedTenantTypes.includes('ON_DEMAND')) {
         return (

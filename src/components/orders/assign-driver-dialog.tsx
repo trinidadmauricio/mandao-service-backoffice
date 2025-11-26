@@ -23,9 +23,10 @@ interface AssignDriverDialogProps {
   orderId: string;
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
   buttonClassName?: string;
+  hasDriver?: boolean;
 }
 
-export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClassName }: AssignDriverDialogProps) {
+export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClassName, hasDriver = false }: AssignDriverDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<string>('');
   // Filtrar solo drivers disponibles desde el backend
@@ -82,14 +83,16 @@ export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClas
       <DialogTrigger asChild>
         <Button variant="outline" size={buttonSize} className={buttonClassName}>
           <Truck className="h-4 w-4 mr-2" />
-          Asignar Driver
+          {hasDriver ? 'Cambiar Driver' : 'Asignar Driver'}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Asignar Driver</DialogTitle>
+          <DialogTitle>{hasDriver ? 'Cambiar Driver' : 'Asignar Driver'}</DialogTitle>
           <DialogDescription>
-            Selecciona un driver para asignar a esta orden.
+            {hasDriver 
+              ? 'Selecciona un nuevo driver para esta orden. El driver actual será reemplazado.'
+              : 'Selecciona un driver para asignar a esta orden.'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
