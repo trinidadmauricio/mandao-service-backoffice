@@ -13,6 +13,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Package, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -193,56 +200,72 @@ export function ModifyItemsDialog({ orderId, orderType = 'RETAIL', currentItems 
               Agregar Item
             </Button>
           </div>
-          {items.map((item, index) => (
-            <div key={item.id || `item-${index}`} className="border rounded p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Item {index + 1}</h4>
-                {items.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveItem(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label>Nombre del Producto *</Label>
-                  <Input
-                    value={(item.product_snapshot.name as string) || ''}
-                    onChange={(e) =>
-                      handleItemChange(index, 'product_snapshot.name', e.target.value)
-                    }
-                    disabled={modifyItems.isPending}
-                  />
+          {items.map((item, index) => {
+            // Determinar si el item es nuevo (id empieza con "temp-") o existente
+            const isNewItem = !item.id || item.id.startsWith('temp-');
+            
+            return (
+              <div key={item.id || `item-${index}`} className="border rounded p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Item {index + 1}</h4>
+                  {items.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveItem(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label>Precio *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={(item.product_snapshot.price as number) || 0}
-                    onChange={(e) =>
-                      handleItemChange(index, 'product_snapshot.price', parseFloat(e.target.value) || 0)
-                    }
-                    disabled={modifyItems.isPending}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Moneda *</Label>
-                  <Input
-                    maxLength={3}
-                    value={(item.product_snapshot.currency as string) || 'USD'}
-                    onChange={(e) =>
-                      handleItemChange(index, 'product_snapshot.currency', e.target.value)
-                    }
-                    disabled={modifyItems.isPending}
-                    placeholder="USD"
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nombre del Producto *</Label>
+                    <Input
+                      value={(item.product_snapshot.name as string) || ''}
+                      onChange={(e) =>
+                        handleItemChange(index, 'product_snapshot.name', e.target.value)
+                      }
+                      disabled={modifyItems.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Precio *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={(item.product_snapshot.price as number) || 0}
+                      onChange={(e) =>
+                        handleItemChange(index, 'product_snapshot.price', parseFloat(e.target.value) || 0)
+                      }
+                      disabled={modifyItems.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Moneda *</Label>
+                    <Select
+                      value={(item.product_snapshot.currency as string) || 'USD'}
+                      onValueChange={(value) =>
+                        handleItemChange(index, 'product_snapshot.currency', value)
+                      }
+                      disabled={modifyItems.isPending || !isNewItem}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar moneda" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">USD - Dólar Estadounidense</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+                        <SelectItem value="GTQ">GTQ - Quetzal Guatemalteco</SelectItem>
+                        <SelectItem value="HNL">HNL - Lempira Hondureño</SelectItem>
+                        <SelectItem value="NIO">NIO - Córdoba Nicaragüense</SelectItem>
+                        <SelectItem value="CRC">CRC - Colón Costarricense</SelectItem>
+                        <SelectItem value="PAB">PAB - Balboa Panameño</SelectItem>
+                        <SelectItem value="SVC">SVC - Colón Salvadoreño</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 <div className="space-y-2">
                   <Label>Cantidad *</Label>
                   <Input
@@ -305,7 +328,8 @@ export function ModifyItemsDialog({ orderId, orderType = 'RETAIL', currentItems 
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
