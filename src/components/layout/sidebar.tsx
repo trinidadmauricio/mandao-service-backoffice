@@ -152,7 +152,13 @@ const navItems: NavItem[] = [
     href: "/logistics-providers",
     icon: Truck,
     requiredPermission: { resource: "logistics-providers", action: "read" },
-    allowedRoles: ["OWNER", "SUPERVISOR", "LOGISTICS_PROVIDER", "SAAS_ADMIN", "SAAS_EDITOR"],
+    allowedRoles: [
+      "OWNER",
+      "SUPERVISOR",
+      "LOGISTICS_PROVIDER",
+      "SAAS_ADMIN",
+      "SAAS_EDITOR",
+    ],
   },
   {
     title: "Configuración",

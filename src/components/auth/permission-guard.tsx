@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
+import { useTenant } from '@/lib/hooks/use-tenant';
 import type { Permission } from '@/lib/constants/roles';
 
 interface PermissionGuardProps {
@@ -24,7 +24,7 @@ export function PermissionGuard({
   children,
 }: PermissionGuardProps) {
   const { hasPermission, role } = usePermissions();
-  const { tenant, isLoading: tenantLoading, isRetail, isOnDemand } = useTenant();
+  const { tenant, isLoading: tenantLoading } = useTenant();
 
   // Si está cargando el tenant, no mostrar nada
   if (tenantLoading) {
