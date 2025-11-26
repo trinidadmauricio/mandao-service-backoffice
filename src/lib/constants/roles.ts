@@ -35,17 +35,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   SUPERVISOR: [
     // Dashboard
     { resource: 'dashboard', action: 'read' },
-    // Órdenes
+    // Órdenes (solo read y update - no puede crear ni eliminar)
     { resource: 'orders', action: 'read' },
-    { resource: 'orders', action: 'create' },
     { resource: 'orders', action: 'update' },
-    { resource: 'orders', action: 'delete' }, // Cancelar
-    { resource: 'orders', action: 'manage' }, // Asignar driver, cambiar branch, etc.
-    // Productos
-    { resource: 'products', action: 'read' },
-    { resource: 'products', action: 'create' },
-    { resource: 'products', action: 'update' },
-    { resource: 'products', action: 'delete' },
     // Drivers
     { resource: 'drivers', action: 'read' },
     { resource: 'drivers', action: 'create' },
@@ -56,11 +48,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'vehicles', action: 'create' },
     { resource: 'vehicles', action: 'update' },
     { resource: 'vehicles', action: 'delete' },
-    // Branches
-    { resource: 'branches', action: 'read' },
-    { resource: 'branches', action: 'create' },
-    { resource: 'branches', action: 'update' },
-    { resource: 'branches', action: 'delete' },
     // Delivery Zones/Rates
     { resource: 'delivery-zones', action: 'read' },
     { resource: 'delivery-zones', action: 'create' },
@@ -70,48 +57,56 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'delivery-rates', action: 'create' },
     { resource: 'delivery-rates', action: 'update' },
     { resource: 'delivery-rates', action: 'delete' },
-    // Payments
-    { resource: 'payments', action: 'read' },
-    { resource: 'payments', action: 'manage' }, // Refunds
-    // Reportes
-    { resource: 'reports', action: 'read' },
-    // Suscripciones
-    { resource: 'subscriptions', action: 'read' },
-    // Usuarios
+    // Logistics Providers (solo el suyo)
+    { resource: 'logistics-providers', action: 'read' },
+    // Usuarios (solo read y update - no puede crear)
     { resource: 'users', action: 'read' },
     { resource: 'users', action: 'update' },
-    // Logistics Providers
-    { resource: 'logistics-providers', action: 'read' },
-    { resource: 'logistics-providers', action: 'create' },
-    { resource: 'logistics-providers', action: 'update' },
-    { resource: 'logistics-providers', action: 'delete' },
-    // Order Counters
-    { resource: 'order-counters', action: 'read' },
+    // Reportes
+    { resource: 'reports', action: 'read' },
   ],
   MERCHANT_USER: [
     // Dashboard
     { resource: 'dashboard', action: 'read' },
-    // Órdenes (limitado)
+    // Órdenes (acceso completo en RETAIL, solo órdenes en ON_DEMAND)
     { resource: 'orders', action: 'read' },
     { resource: 'orders', action: 'create' },
-    { resource: 'orders', action: 'update' }, // Solo actualizar estado básico
-    // Productos (limitado)
+    { resource: 'orders', action: 'update' },
+    { resource: 'orders', action: 'delete' },
+    // Productos (solo RETAIL)
     { resource: 'products', action: 'read' },
+    { resource: 'products', action: 'create' },
     { resource: 'products', action: 'update' },
-    // Categorías (solo lectura)
+    { resource: 'products', action: 'delete' },
+    // Categorías (solo RETAIL)
     { resource: 'categories', action: 'read' },
-    // Marcas (solo lectura)
+    { resource: 'categories', action: 'create' },
+    { resource: 'categories', action: 'update' },
+    { resource: 'categories', action: 'delete' },
+    // Marcas (solo RETAIL)
     { resource: 'brands', action: 'read' },
-    // Reportes básicos
+    { resource: 'brands', action: 'create' },
+    { resource: 'brands', action: 'update' },
+    { resource: 'brands', action: 'delete' },
+    // Sucursales (solo RETAIL)
+    { resource: 'branches', action: 'read' },
+    { resource: 'branches', action: 'create' },
+    { resource: 'branches', action: 'update' },
+    { resource: 'branches', action: 'delete' },
+    // Unidades de Medida (solo RETAIL)
+    { resource: 'units-of-measure', action: 'read' },
+    { resource: 'units-of-measure', action: 'create' },
+    { resource: 'units-of-measure', action: 'update' },
+    { resource: 'units-of-measure', action: 'delete' },
+    // Reportes (solo sus datos)
     { resource: 'reports', action: 'read' },
-    // Suscripciones
-    { resource: 'subscriptions', action: 'read' },
   ],
   LOGISTICS_PROVIDER: [
     // Dashboard (solo métricas de sus órdenes)
     { resource: 'dashboard', action: 'read' },
     // Órdenes (solo órdenes asignadas a su proveedor)
     { resource: 'orders', action: 'read' },
+    { resource: 'orders', action: 'update' },
     // Drivers (solo de su proveedor)
     { resource: 'drivers', action: 'read' },
     { resource: 'drivers', action: 'create' },
@@ -122,11 +117,22 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'vehicles', action: 'create' },
     { resource: 'vehicles', action: 'update' },
     { resource: 'vehicles', action: 'delete' },
-    // Usuarios (solo usuarios de su proveedor)
+    // Delivery Zones/Rates
+    { resource: 'delivery-zones', action: 'read' },
+    { resource: 'delivery-zones', action: 'create' },
+    { resource: 'delivery-zones', action: 'update' },
+    { resource: 'delivery-zones', action: 'delete' },
+    { resource: 'delivery-rates', action: 'read' },
+    { resource: 'delivery-rates', action: 'create' },
+    { resource: 'delivery-rates', action: 'update' },
+    { resource: 'delivery-rates', action: 'delete' },
+    // Logistics Providers (solo el suyo)
+    { resource: 'logistics-providers', action: 'read' },
+    // Usuarios (solo usuarios de su proveedor - solo puede crear SUPERVISOR)
     { resource: 'users', action: 'read' },
     { resource: 'users', action: 'create' },
     { resource: 'users', action: 'update' },
-    // Reportes (solo de sus órdenes)
+    // Reportes (solo de sus datos)
     { resource: 'reports', action: 'read' },
   ],
   DRIVER: [
@@ -151,8 +157,17 @@ export function hasPermission(role: UserRole, resource: string, action: Permissi
 
   const permissions = ROLE_PERMISSIONS[role];
 
-  // OWNER tiene acceso a todo
+  // OWNER tiene acceso a todo EXCEPTO módulos SAAS
   if (role === 'OWNER') {
+    // Si es un módulo SAAS, no permitir acceso automático
+    if (
+      resource === 'order-counters' ||
+      resource === 'payments' ||
+      resource === 'subscriptions' ||
+      resource === 'subscription-plans'
+    ) {
+      return false;
+    }
     return true;
   }
 
@@ -173,7 +188,16 @@ export function canAccessResource(role: UserRole, resource: string): boolean {
     return true;
   }
 
+  // OWNER tiene acceso a todo EXCEPTO módulos SAAS
   if (role === 'OWNER') {
+    if (
+      resource === 'order-counters' ||
+      resource === 'payments' ||
+      resource === 'subscriptions' ||
+      resource === 'subscription-plans'
+    ) {
+      return false;
+    }
     return true;
   }
 
@@ -189,7 +213,16 @@ export function getAllowedActions(role: UserRole, resource: string): Permission[
     return ['create', 'read', 'update', 'delete', 'manage'];
   }
 
+  // OWNER tiene acceso a todo EXCEPTO módulos SAAS
   if (role === 'OWNER') {
+    if (
+      resource === 'order-counters' ||
+      resource === 'payments' ||
+      resource === 'subscriptions' ||
+      resource === 'subscription-plans'
+    ) {
+      return [];
+    }
     return ['create', 'read', 'update', 'delete', 'manage'];
   }
 

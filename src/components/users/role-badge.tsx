@@ -11,6 +11,7 @@ const roleColors: Record<UserRole, 'default' | 'secondary' | 'destructive' | 'ou
   MERCHANT_USER: 'outline',
   CUSTOMER: 'outline',
   LOGISTICS_PROVIDER: 'info',
+  DRIVER: 'outline',
   SAAS_ADMIN: 'default',
   SAAS_EDITOR: 'secondary',
 };
@@ -21,6 +22,7 @@ const roleLabels: Record<UserRole, string> = {
   MERCHANT_USER: 'Usuario',
   CUSTOMER: 'Cliente',
   LOGISTICS_PROVIDER: 'Proveedor Logístico',
+  DRIVER: 'Conductor',
   SAAS_ADMIN: 'Admin SAAS',
   SAAS_EDITOR: 'Editor SAAS',
 };

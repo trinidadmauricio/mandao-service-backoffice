@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { generateSlug } from '@/lib/utils/slug';
@@ -205,11 +206,14 @@ export function BrandForm({ brandId }: BrandFormProps) {
                   </FormControl>
                   {brand?.logo_url && (
                     <div className="mt-2">
-                      <img
-                        src={brand.logo_url}
-                        alt={brand.name}
-                        className="h-20 w-20 object-contain border rounded"
-                      />
+                      <div className="relative h-20 w-20 border rounded overflow-hidden">
+                        <Image
+                          src={brand.logo_url}
+                          alt={brand.name}
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                     </div>
                   )}
                   <FormMessage />

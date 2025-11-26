@@ -1,7 +1,7 @@
 'use client';
 
 import { useDeliveryZones, useDeleteDeliveryZone } from '@/lib/hooks/use-delivery-zones';
-import { PermissionGuard } from '@/components/auth/permission-guard';
+import { RoleGuard } from '@/components/auth/role-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,16 +35,15 @@ export default function DeliveryZonesPage() {
   };
 
   return (
-    <PermissionGuard
-      resource="delivery-zones"
-      action="read"
-      allowedTenantTypes={['ON_DEMAND', 'HYBRID']}
+    <RoleGuard
+      allowedRoles={['SUPERVISOR', 'LOGISTICS_PROVIDER']}
+      requiredPermission={{ resource: 'delivery-zones', action: 'read' }}
       fallback={
         <div className="py-6">
           <div className="text-center p-8">
             <h2 className="text-2xl font-bold mb-2">Acceso Restringido</h2>
             <p className="text-muted-foreground">
-              Esta funcionalidad solo está disponible para tenants de tipo ON_DEMAND o HYBRID.
+              Esta funcionalidad solo está disponible para proveedores de logística y supervisores.
             </p>
           </div>
         </div>
@@ -155,7 +154,7 @@ export default function DeliveryZonesPage() {
           </Card>
         </div>
       )}
-    </PermissionGuard>
+    </RoleGuard>
   );
 }
 

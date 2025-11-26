@@ -52,7 +52,7 @@ export default function VehiclesPage() {
 
   return (
     <RoleGuard
-      allowedRoles={['OWNER', 'SUPERVISOR', 'LOGISTICS_PROVIDER']}
+      allowedRoles={['SUPERVISOR', 'LOGISTICS_PROVIDER']}
       requiredPermission={{ resource: 'vehicles', action: 'read' }}
       fallback={<div>No tienes permisos para acceder a esta página</div>}
     >

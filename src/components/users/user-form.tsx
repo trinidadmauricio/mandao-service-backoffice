@@ -58,9 +58,6 @@ export function UserForm({ userId }: UserFormProps) {
   const { data: user, isLoading: isLoadingUser } = useUser(userId || '');
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
-  
-  // Determinar qué roles se pueden crear según el rol del usuario actual
-  const canCreateSupervisor = currentUser?.role === 'LOGISTICS_PROVIDER';
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -78,12 +75,14 @@ export function UserForm({ userId }: UserFormProps) {
   // Cargar datos del usuario si está editando
   useEffect(() => {
     if (user && isEditing) {
+      // Filtrar CUSTOMER ya que no se puede editar desde el backoffice
+      const validRole = user.role === 'CUSTOMER' ? 'MERCHANT_USER' : user.role;
       form.reset({
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
         phone: user.phone || '',
-        role: user.role,
+        role: validRole as 'SAAS_ADMIN' | 'SAAS_EDITOR' | 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'DRIVER',
         status: (user.status as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED') || 'ACTIVE',
         password: '', // No cargar password al editar
       });
@@ -281,28 +280,33 @@ export function UserForm({ userId }: UserFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {allowedRoles.includes('MERCHANT_USER') && (
-                          <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
+                        {/* Roles visibles para SAAS_ADMIN y SAAS_EDITOR */}
+                        {(currentUser?.role === 'SAAS_ADMIN' || currentUser?.role === 'SAAS_EDITOR') && (
+                          <>
+                            <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
+                            <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
+                            <SelectItem value="OWNER">Propietario</SelectItem>
+                            <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
+                            <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
+                          </>
                         )}
-                        {allowedRoles.includes('SUPERVISOR') && (
-                          <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+
+                        {/* Roles visibles para OWNER */}
+                        {currentUser?.role === 'OWNER' && (
+                          <>
+                            <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
+                          </>
                         )}
-                        {allowedRoles.includes('OWNER') && (
-                          <SelectItem value="OWNER">Propietario</SelectItem>
+
+                        {/* Roles visibles para LOGISTICS_PROVIDER */}
+                        {currentUser?.role === 'LOGISTICS_PROVIDER' && (
+                          <>
+                            <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                          </>
                         )}
-                        {/* CUSTOMER no debe aparecer - solo se crea desde storefront */}
-                        {allowedRoles.includes('LOGISTICS_PROVIDER') && (
-                          <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
-                        )}
-                        {allowedRoles.includes('DRIVER') && (
-                          <SelectItem value="DRIVER">Conductor</SelectItem>
-                        )}
-                        {allowedRoles.includes('SAAS_ADMIN') && (
-                          <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
-                        )}
-                        {allowedRoles.includes('SAAS_EDITOR') && (
-                          <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
-                        )}
+
+                        {/* Otros roles no pueden crear usuarios */}
+                        {/* CUSTOMER y DRIVER nunca se pueden crear desde el backoffice */}
                       </SelectContent>
                     </Select>
                     <FormMessage />

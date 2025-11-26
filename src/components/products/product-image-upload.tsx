@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, X } from 'lucide-react';
+import Image from 'next/image';
 
 interface ProductImageUploadProps {
   imageUrl?: string;
@@ -57,11 +58,12 @@ export function ProductImageUpload({ imageUrl, onImageChange, disabled }: Produc
           <Label>Imagen del Producto</Label>
 
           {preview ? (
-            <div className="relative">
-              <img
+            <div className="relative w-full h-64 border rounded-lg overflow-hidden">
+              <Image
                 src={preview}
                 alt="Preview"
-                className="w-full h-64 object-contain border rounded-lg"
+                fill
+                className="object-contain"
               />
               <Button
                 type="button"

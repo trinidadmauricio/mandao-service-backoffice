@@ -1,18 +1,17 @@
 import { DeliveryRateForm } from '@/components/delivery-rates/delivery-rate-form';
-import { PermissionGuard } from '@/components/auth/permission-guard';
+import { RoleGuard } from '@/components/auth/role-guard';
 
 export default function NewDeliveryRatePage() {
   return (
-    <PermissionGuard
-      resource="delivery-rates"
-      action="create"
-      allowedTenantTypes={['ON_DEMAND', 'HYBRID']}
+    <RoleGuard
+      allowedRoles={['SUPERVISOR', 'LOGISTICS_PROVIDER']}
+      requiredPermission={{ resource: 'delivery-rates', action: 'create' }}
       fallback={
         <div className="py-6">
           <div className="text-center p-8">
             <h2 className="text-2xl font-bold mb-2">Acceso Restringido</h2>
             <p className="text-muted-foreground">
-              Esta funcionalidad solo está disponible para tenants de tipo ON_DEMAND o HYBRID.
+              Esta funcionalidad solo está disponible para proveedores de logística y supervisores.
             </p>
           </div>
         </div>
@@ -21,7 +20,7 @@ export default function NewDeliveryRatePage() {
       <div className="py-6">
         <DeliveryRateForm />
       </div>
-    </PermissionGuard>
+    </RoleGuard>
   );
 }
 

@@ -38,6 +38,7 @@ export default function BranchesPage() {
     <PermissionGuard
       resource="branches"
       action="read"
+      allowedTenantTypes={['RETAIL']}
       fallback={<div>No tienes permisos para acceder a esta página</div>}
     >
       {isLoading ? (

@@ -12,6 +12,7 @@ export default function EditBranchPage() {
     <PermissionGuard
       resource="branches"
       action="update"
+      allowedTenantTypes={['RETAIL']}
       fallback={
         <div className="py-6">
           <div className="text-center p-8">

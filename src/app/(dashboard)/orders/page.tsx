@@ -149,7 +149,7 @@ export default function OrdersPage() {
           </div>
           {hasPermission('orders', 'create') && (
             <div className="flex gap-2">
-              {(tenant as Tenant | null) && ((tenant as Tenant).type === 'ON_DEMAND' || (tenant as Tenant).type === 'HYBRID') ? (
+              {(tenant as Tenant | null) && (tenant as Tenant).type === 'ON_DEMAND' ? (
                 <Link href="/orders/new/on-demand">
                   <Button variant="outline">
                     <Plus className="h-4 w-4 mr-2" />
@@ -157,7 +157,7 @@ export default function OrdersPage() {
                   </Button>
                 </Link>
               ) : null}
-              {(tenant as Tenant | null) && ((tenant as Tenant).type === 'RETAIL' || (tenant as Tenant).type === 'HYBRID') ? (
+              {(tenant as Tenant | null) && (tenant as Tenant).type === 'RETAIL' ? (
                 <Link href="/orders/new/retail">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
