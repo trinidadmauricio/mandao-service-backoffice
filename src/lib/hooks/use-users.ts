@@ -7,6 +7,8 @@ export interface UsersFilters {
   page?: number;
   limit?: number;
   search?: string;
+  role?: 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 }
 
 export interface UsersResponse {
@@ -21,20 +23,24 @@ export function useUsers(filters?: UsersFilters) {
   return useQuery({
     queryKey: ["users", filters],
     queryFn: async () => {
-      const response = await apiClient.get<{ status: string; data: User[] }>(
-        endpoints.users.list,
-        {
-          params: filters,
-        }
-      );
-      // El backend devuelve { status: 'success', data: [...] }
+      const response = await apiClient.get<{
+        status: string;
+        data: User[];
+        total?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+      }>(endpoints.users.list, {
+        params: filters,
+      });
+      // El backend devuelve { status: 'success', data: [...], total, page, limit, totalPages }
       const users = response.data.data || [];
       return {
         data: users,
-        total: users.length,
-        page: 1,
-        limit: users.length,
-        totalPages: 1,
+        total: response.data.total ?? users.length,
+        page: response.data.page ?? filters?.page ?? 1,
+        limit: response.data.limit ?? filters?.limit ?? (users.length || 10),
+        totalPages: response.data.totalPages ?? Math.ceil((response.data.total ?? users.length) / (response.data.limit ?? filters?.limit ?? 10)),
       } as UsersResponse;
     },
   });

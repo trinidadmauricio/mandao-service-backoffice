@@ -9,6 +9,7 @@ export interface DriversFilters {
   search?: string;
   logistics_provider_id?: string;
   availability_status?: 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'SUSPENDED';
+  work_type?: 'FULL_TIME' | 'PART_TIME' | 'FREELANCE';
 }
 
 export interface DriversResponse {
@@ -23,20 +24,24 @@ export function useDrivers(filters?: DriversFilters) {
   return useQuery({
     queryKey: ['drivers', filters],
     queryFn: async () => {
-      const response = await apiClient.get<{ status: string; data: Driver[] }>(
-        endpoints.drivers.list,
-        {
-          params: filters,
-        }
-      );
-      // El backend devuelve { status: 'success', data: [...] }
+      const response = await apiClient.get<{
+        status: string;
+        data: Driver[];
+        total?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+      }>(endpoints.drivers.list, {
+        params: filters,
+      });
+      // El backend devuelve { status: 'success', data: [...], total, page, limit, totalPages }
       const drivers = response.data.data || [];
       return {
         data: drivers,
-        total: drivers.length,
-        page: 1,
-        limit: drivers.length,
-        totalPages: 1,
+        total: response.data.total ?? drivers.length,
+        page: response.data.page ?? filters?.page ?? 1,
+        limit: response.data.limit ?? filters?.limit ?? (drivers.length || 10),
+        totalPages: response.data.totalPages ?? Math.ceil((response.data.total ?? drivers.length) / (response.data.limit ?? filters?.limit ?? 10)),
       } as DriversResponse;
     },
   });

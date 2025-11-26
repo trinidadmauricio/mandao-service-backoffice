@@ -97,7 +97,7 @@ export function InventoryChart({ data }: InventoryChartProps) {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {stockStatusData.map((entry, index) => (
+                  {stockStatusData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

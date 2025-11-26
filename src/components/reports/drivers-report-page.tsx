@@ -83,7 +83,7 @@ export function DriversReportPage() {
                 }
               >
                 <option value="">Todos los drivers</option>
-                {drivers?.map((driver) => (
+                {drivers?.data?.map((driver) => (
                   <option key={driver.id} value={driver.id}>
                     {driver.user?.first_name || 'N/A'} {driver.user?.last_name || ''}
                   </option>

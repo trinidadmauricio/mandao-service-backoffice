@@ -34,7 +34,7 @@ const userSchema = z
     first_name: z.string().min(1, 'El nombre es requerido'),
     last_name: z.string().min(1, 'El apellido es requerido'),
     phone: z.string().optional(),
-    role: z.enum(['SAAS_ADMIN', 'SAAS_EDITOR', 'OWNER', 'SUPERVISOR', 'MERCHANT_USER', 'CUSTOMER']),
+    role: z.enum(['SAAS_ADMIN', 'SAAS_EDITOR', 'OWNER', 'SUPERVISOR', 'MERCHANT_USER', 'CUSTOMER', 'LOGISTICS_PROVIDER']),
     status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).default('ACTIVE'),
   })
   .refine(() => {
@@ -272,6 +272,7 @@ export function UserForm({ userId }: UserFormProps) {
                         <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
                         <SelectItem value="OWNER">Propietario</SelectItem>
                         <SelectItem value="CUSTOMER">Cliente</SelectItem>
+                        <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
                         <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
                         <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
                       </SelectContent>

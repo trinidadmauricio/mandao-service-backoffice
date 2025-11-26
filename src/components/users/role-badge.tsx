@@ -10,6 +10,9 @@ const roleColors: Record<UserRole, 'default' | 'secondary' | 'destructive' | 'ou
   SUPERVISOR: 'info',
   MERCHANT_USER: 'outline',
   CUSTOMER: 'outline',
+  LOGISTICS_PROVIDER: 'info',
+  SAAS_ADMIN: 'default',
+  SAAS_EDITOR: 'secondary',
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -17,6 +20,9 @@ const roleLabels: Record<UserRole, string> = {
   SUPERVISOR: 'Supervisor',
   MERCHANT_USER: 'Usuario',
   CUSTOMER: 'Cliente',
+  LOGISTICS_PROVIDER: 'Proveedor Logístico',
+  SAAS_ADMIN: 'Admin SAAS',
+  SAAS_EDITOR: 'Editor SAAS',
 };
 
 export function RoleBadge({ role }: RoleBadgeProps) {

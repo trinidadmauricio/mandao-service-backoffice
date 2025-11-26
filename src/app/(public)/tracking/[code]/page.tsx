@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import type { Order } from '@/types/api';
 
 export default function PublicTrackingPage() {
   const params = useParams();
@@ -19,10 +20,10 @@ export default function PublicTrackingPage() {
   const [trackingCode, setTrackingCode] = useState(initialCode || '');
   const [searchCode, setSearchCode] = useState(initialCode || '');
 
-  const { data: order, isLoading, error } = useQuery({
+  const { data: order, isLoading, error } = useQuery<Order | undefined>({
     queryKey: ['public-order-tracking', searchCode],
     queryFn: async () => {
-      const response = await apiClient.get(endpoints.orders.publicTracking(searchCode));
+      const response = await apiClient.get<{ data: Order }>(endpoints.orders.publicTracking(searchCode));
       return response.data.data;
     },
     enabled: !!searchCode,
@@ -118,17 +119,21 @@ export default function PublicTrackingPage() {
                   <p className="font-medium">{formatDate(order.estimated_delivery_at)}</p>
                 </div>
               )}
-              {order.delivery_address && typeof order.delivery_address === 'object' && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Dirección de Entrega</p>
-                  <p className="font-medium">
-                    {order.delivery_address.street}, {order.delivery_address.city}
-                  </p>
-                  {order.delivery_address.country && (
-                    <p className="text-sm text-muted-foreground">{order.delivery_address.country}</p>
-                  )}
-                </div>
-              )}
+              {order.delivery_address && typeof order.delivery_address === 'object' && (() => {
+                const address = order.delivery_address as Record<string, unknown>;
+                const country = typeof address.country === 'string' ? address.country : null;
+                return (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Dirección de Entrega</p>
+                    <p className="font-medium">
+                      {(address.street as string) || ''}, {(address.city as string) || ''}
+                    </p>
+                    {country && (
+                      <p className="text-sm text-muted-foreground">{country}</p>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         )}

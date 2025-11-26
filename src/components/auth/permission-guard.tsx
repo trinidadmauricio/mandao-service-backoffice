@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { useTenant } from '@/lib/hooks/use-tenant';
+import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import type { Permission } from '@/lib/constants/roles';
 
 interface PermissionGuardProps {
@@ -38,7 +38,8 @@ export function PermissionGuard({
 
   // Verificar tipo de tenant si se especifica
   if (allowedTenantTypes && tenant) {
-    if (!allowedTenantTypes.includes(tenant.type)) {
+    const tenantData = tenant as unknown as Tenant;
+    if (!allowedTenantTypes.includes(tenantData.type)) {
       return (
         fallback || (
           <div>

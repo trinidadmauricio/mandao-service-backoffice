@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useUsers, useDeleteUser, type UsersFilters } from '@/lib/hooks/use-users';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import { Button } from '@/components/ui/button';
@@ -10,18 +10,41 @@ import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, Edit, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import type { User } from '@/types/api';
 
 export default function UsersPage() {
+  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<UsersFilters>({
     page: 1,
     limit: 10,
     search: '',
   });
+
+  // Debounce search term
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // Update filters when debounced search changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      search: debouncedSearch || undefined,
+      page: 1, // Reset to first page when search changes
+    }));
+  }, [debouncedSearch]);
+
   const { data: usersResponse, isLoading, error } = useUsers(filters);
   const deleteUser = useDeleteUser();
   const { hasPermission } = usePermissions();
@@ -176,16 +199,75 @@ export default function UsersPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Usuarios</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Lista de Usuarios</CardTitle>
+              <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre, email o teléfono..."
+                    className="pl-8 w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select
+                  value={filters.role || 'all'}
+                  onValueChange={(value) =>
+                    setFilters({
+                      ...filters,
+                      role:
+                        value === 'all'
+                          ? undefined
+                          : (value as UsersFilters['role']),
+                      page: 1,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filtrar por rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="OWNER">Owner</SelectItem>
+                    <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                    <SelectItem value="MERCHANT_USER">Merchant User</SelectItem>
+                    <SelectItem value="LOGISTICS_PROVIDER">Logistics Provider</SelectItem>
+                    <SelectItem value="CUSTOMER">Customer</SelectItem>
+                    <SelectItem value="SAAS_ADMIN">SAAS Admin</SelectItem>
+                    <SelectItem value="SAAS_EDITOR">SAAS Editor</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.status || 'all'}
+                  onValueChange={(value) =>
+                    setFilters({
+                      ...filters,
+                      status:
+                        value === 'all'
+                          ? undefined
+                          : (value as UsersFilters['status']),
+                      page: 1,
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filtrar por estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="ACTIVE">Activo</SelectItem>
+                    <SelectItem value="INACTIVE">Inactivo</SelectItem>
+                    <SelectItem value="SUSPENDED">Suspendido</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <DataTable
               columns={columns}
               data={users}
-              searchKey="email"
-              searchPlaceholder="Buscar usuarios..."
-              searchValue={filters.search}
-              onSearchChange={(value) => setFilters({ ...filters, search: value, page: 1 })}
               pageSize={filters.limit || 10}
               totalCount={totalCount}
               currentPage={filters.page || 1}
