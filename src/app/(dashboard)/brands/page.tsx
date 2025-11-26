@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function BrandsPage() {
   const { data: brands, isLoading, error } = useBrands();
@@ -105,11 +106,14 @@ export default function BrandsPage() {
                 >
                   <div className="flex items-center space-x-4">
                     {brand.logo_url && (
-                      <img
-                        src={brand.logo_url}
-                        alt={brand.name}
-                        className="h-12 w-12 object-contain"
-                      />
+                      <div className="relative h-12 w-12">
+                        <Image
+                          src={brand.logo_url}
+                          alt={brand.name}
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                     )}
                     <div>
                       <p className="font-medium">{brand.name}</p>
