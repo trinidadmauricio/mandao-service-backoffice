@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useTenant } from '@/lib/hooks/use-tenant';
 import { cn } from '@/lib/utils/cn';
 import {
   LayoutDashboard,
@@ -31,6 +32,7 @@ interface NavItem {
     action: 'read' | 'create' | 'update' | 'delete' | 'manage';
   };
   allowedRoles?: string[];
+  requiredTenantType?: 'RETAIL' | 'ON_DEMAND'; // Si no se especifica, está disponible para todos los tenant types
 }
 
 const navItems: NavItem[] = [
@@ -51,18 +53,21 @@ const navItems: NavItem[] = [
     href: '/products',
     icon: Package,
     requiredPermission: { resource: 'products', action: 'read' },
+    requiredTenantType: 'RETAIL',
   },
   {
     title: 'Categorías',
     href: '/categories',
     icon: Tags,
     requiredPermission: { resource: 'categories', action: 'read' },
+    requiredTenantType: 'RETAIL',
   },
   {
     title: 'Marcas',
     href: '/brands',
     icon: Award,
     requiredPermission: { resource: 'brands', action: 'read' },
+    requiredTenantType: 'RETAIL',
   },
   {
     title: 'Drivers',
@@ -84,6 +89,7 @@ const navItems: NavItem[] = [
     icon: MapPin,
     requiredPermission: { resource: 'branches', action: 'read' },
     allowedRoles: ['OWNER', 'SUPERVISOR'],
+    requiredTenantType: 'RETAIL',
   },
   {
     title: 'Zonas de Entrega',
@@ -152,6 +158,7 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const { hasPermission, role } = usePermissions();
+  const { tenant, isRetail, isOnDemand } = useTenant();
 
   const filteredNavItems = navItems.filter((item) => {
     // Excluir CUSTOMER del backoffice (solo para storefront)
@@ -159,12 +166,43 @@ export function Sidebar() {
       return false;
     }
 
+    // Validar tenant type
+    if (item.requiredTenantType) {
+      // SAAS roles pueden ver todo sin restricciones de tenant type
+      if (role === 'SAAS_ADMIN' || role === 'SAAS_EDITOR') {
+        // Permitir acceso
+      }
+      // LOGISTICS_PROVIDER y SUPERVISOR no tienen tenant, no deben ver módulos de catálogo
+      else if (role === 'LOGISTICS_PROVIDER' || role === 'SUPERVISOR') {
+        // Si requiere RETAIL, no mostrar (LOGISTICS_PROVIDER no tiene catálogo)
+        if (item.requiredTenantType === 'RETAIL') {
+          return false;
+        }
+      }
+      // Otros roles: validar tenant type
+      else if (tenant) {
+        if (item.requiredTenantType === 'RETAIL' && !isRetail) {
+          return false;
+        }
+        if (item.requiredTenantType === 'ON_DEMAND' && !isOnDemand) {
+          return false;
+        }
+      } else {
+        // Si no hay tenant y requiere un tipo específico, no mostrar
+        return false;
+      }
+    }
+
+    // Validar roles permitidos
     if (item.allowedRoles && role && !item.allowedRoles.includes(role)) {
       return false;
     }
+
+    // Validar permisos
     if (item.requiredPermission) {
       return hasPermission(item.requiredPermission.resource, item.requiredPermission.action);
     }
+
     return true;
   });
 
