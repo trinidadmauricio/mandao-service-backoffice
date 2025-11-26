@@ -281,16 +281,28 @@ export function UserForm({ userId }: UserFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
-                        {canCreateSupervisor && (
+                        {allowedRoles.includes('MERCHANT_USER') && (
+                          <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
+                        )}
+                        {allowedRoles.includes('SUPERVISOR') && (
                           <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
                         )}
-                        <SelectItem value="OWNER">Propietario</SelectItem>
+                        {allowedRoles.includes('OWNER') && (
+                          <SelectItem value="OWNER">Propietario</SelectItem>
+                        )}
                         {/* CUSTOMER no debe aparecer - solo se crea desde storefront */}
-                        <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
-                        <SelectItem value="DRIVER">Conductor</SelectItem>
-                        <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
-                        <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
+                        {allowedRoles.includes('LOGISTICS_PROVIDER') && (
+                          <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
+                        )}
+                        {allowedRoles.includes('DRIVER') && (
+                          <SelectItem value="DRIVER">Conductor</SelectItem>
+                        )}
+                        {allowedRoles.includes('SAAS_ADMIN') && (
+                          <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
+                        )}
+                        {allowedRoles.includes('SAAS_EDITOR') && (
+                          <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
