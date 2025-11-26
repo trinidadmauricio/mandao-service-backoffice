@@ -6,6 +6,7 @@ export default function NewBranchPage() {
     <PermissionGuard
       resource="branches"
       action="create"
+      allowedTenantTypes={['RETAIL']}
       fallback={
         <div className="py-6">
           <div className="text-center p-8">
