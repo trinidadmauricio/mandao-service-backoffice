@@ -49,7 +49,7 @@ export interface Tenant {
   id: string;
   slug: string;
   name: string;
-  type: 'RETAIL' | 'ON_DEMAND' | 'HYBRID';
+  type: 'RETAIL' | 'ON_DEMAND';
   subscription_plan_id?: string;
   subscription_status: 'TRIAL' | 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
   subscription_expires_at?: string;
