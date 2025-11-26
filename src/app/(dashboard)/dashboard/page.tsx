@@ -14,13 +14,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton, SkeletonText } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { USER_ROLE } from '@/lib/constants/roles';
 import { Package, DollarSign, TrendingUp, Users, Building2, AlertCircle } from 'lucide-react';
 
 export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>('month');
   const { user } = useAuth();
   const { selectedTenantId } = useSelectedTenant();
-  const isSAASAdmin = user && (user.role === 'SAAS_ADMIN' || user.role === 'SAAS_EDITOR');
+  const isSAASAdmin = user && (user.role === USER_ROLE.SAAS_ADMIN || user.role === USER_ROLE.SAAS_EDITOR);
   const { data: kpis, isLoading, error } = useDashboardKPIs(period);
   
   // Calcular fechas para el reporte basado en el período

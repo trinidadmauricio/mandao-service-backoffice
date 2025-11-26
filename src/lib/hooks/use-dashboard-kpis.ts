@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { endpoints } from '../api/endpoints';
 import { useSelectedTenant } from './use-selected-tenant';
 import { useAuth } from './use-auth';
+import { USER_ROLE } from '../constants/roles';
 import type { DashboardKPIs } from '@/types/api';
 
 export type Period = 'today' | 'week' | 'month' | 'year';
@@ -10,7 +11,7 @@ export type Period = 'today' | 'week' | 'month' | 'year';
 export function useDashboardKPIs(period: Period = 'month') {
   const { selectedTenantId } = useSelectedTenant();
   const { user } = useAuth();
-  const isSAASAdmin = user && (user.role === 'SAAS_ADMIN' || user.role === 'SAAS_EDITOR');
+  const isSAASAdmin = user && (user.role === USER_ROLE.SAAS_ADMIN || user.role === USER_ROLE.SAAS_EDITOR);
 
   return useQuery({
     queryKey: ['dashboard-kpis', period, selectedTenantId],

@@ -19,11 +19,11 @@ const roleColors: Record<UserRole, 'default' | 'secondary' | 'destructive' | 'ou
 const roleLabels: Record<UserRole, string> = {
   OWNER: 'Propietario',
   SUPERVISOR: 'Supervisor',
-  MERCHANT_USER: 'Usuario',
+  MERCHANT_USER: 'Usuario del Comercio',
   CUSTOMER: 'Cliente',
   LOGISTICS_PROVIDER: 'Proveedor Logístico',
   DRIVER: 'Conductor',
-  SAAS_ADMIN: 'Admin SAAS',
+  SAAS_ADMIN: 'Administrador SAAS',
   SAAS_EDITOR: 'Editor SAAS',
 };
 

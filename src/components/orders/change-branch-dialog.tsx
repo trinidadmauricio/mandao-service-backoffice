@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useBranches } from '@/lib/hooks/use-branches';
-import { useChangeBranch } from '@/lib/hooks/use-orders';
+import { useChangeBranch, useOrder } from '@/lib/hooks/use-orders';
 import {
   Dialog,
   DialogContent,
@@ -13,32 +13,60 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
 import { MapPin } from 'lucide-react';
 
 interface ChangeBranchDialogProps {
   orderId: string;
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
   buttonClassName?: string;
+  hasBranch?: boolean;
 }
 
-export function ChangeBranchDialog({ orderId, buttonSize = 'default', buttonClassName }: ChangeBranchDialogProps) {
+export function ChangeBranchDialog({ orderId, buttonSize = 'default', buttonClassName, hasBranch = false }: ChangeBranchDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const { data: branches } = useBranches();
   const changeBranch = useChangeBranch();
+  const { data: order } = useOrder(orderId);
+  const { toast } = useToast();
+
+  // Validación defensiva: verificar que la orden no sea ON_DEMAND
+  const isOnDemand = order?.order_type === 'ON_DEMAND';
 
   const handleSubmit = async () => {
     if (!selectedBranchId) return;
+
+    // Validación defensiva
+    if (isOnDemand) {
+      toast({
+        title: 'Error',
+        description: 'Las órdenes ON_DEMAND no pueden tener sucursales asignadas',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       await changeBranch.mutateAsync({
         orderId,
         branchId: selectedBranchId,
       });
+      toast({
+        title: 'Sucursal actualizada',
+        description: hasBranch ? 'La sucursal ha sido cambiada exitosamente.' : 'La sucursal ha sido asignada exitosamente.',
+      });
       setOpen(false);
       setSelectedBranchId('');
     } catch (error) {
-      console.error('Error changing branch:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Error al cambiar la sucursal. Por favor, intenta nuevamente.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -49,15 +77,16 @@ export function ChangeBranchDialog({ orderId, buttonSize = 'default', buttonClas
       <DialogTrigger asChild>
         <Button variant="outline" size={buttonSize} className={buttonClassName}>
           <MapPin className="h-4 w-4 mr-2" />
-          Cambiar Branch
+          {hasBranch ? 'Cambiar Sucursal' : 'Asignar Sucursal'}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cambiar Branch</DialogTitle>
+          <DialogTitle>{hasBranch ? 'Cambiar Sucursal' : 'Asignar Sucursal'}</DialogTitle>
           <DialogDescription>
-            Selecciona una nueva sucursal para esta orden. Esta acción sigue el patrón inmutable
-            (crea un nuevo registro).
+            {hasBranch
+              ? 'Selecciona una nueva sucursal para esta orden. Esta acción sigue el patrón inmutable (crea un nuevo registro).'
+              : 'Selecciona una sucursal para asignar a esta orden.'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

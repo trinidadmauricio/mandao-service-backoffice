@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { endpoints } from '../api/endpoints';
 import { useSelectedTenant } from './use-selected-tenant';
 import { useAuth } from './use-auth';
+import { USER_ROLE } from '../constants/roles';
 
 export interface OrdersReportFilters {
   start_date?: string;
@@ -33,7 +34,7 @@ export interface OrdersReportData {
 export function useOrdersReport(filters?: OrdersReportFilters) {
   const { selectedTenantId } = useSelectedTenant();
   const { user } = useAuth();
-  const isSAASAdmin = user && (user.role === 'SAAS_ADMIN' || user.role === 'SAAS_EDITOR');
+  const isSAASAdmin = user && (user.role === USER_ROLE.SAAS_ADMIN || user.role === USER_ROLE.SAAS_EDITOR);
 
   return useQuery({
     queryKey: ['orders-report', filters, selectedTenantId],

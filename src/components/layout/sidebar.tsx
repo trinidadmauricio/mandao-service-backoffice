@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useTenant } from "@/lib/hooks/use-tenant";
+import { USER_ROLE } from "@/lib/constants/roles";
 import { cn } from "@/lib/utils/cn";
 import {
   LayoutDashboard,
@@ -175,18 +176,18 @@ export function Sidebar() {
 
   const filteredNavItems = navItems.filter((item) => {
     // Excluir CUSTOMER del backoffice (solo para storefront)
-    if (role === "CUSTOMER") {
+    if (role === USER_ROLE.CUSTOMER) {
       return false;
     }
 
     // Validar tenant type
     if (item.requiredTenantType) {
       // SAAS roles pueden ver todo sin restricciones de tenant type
-      if (role === "SAAS_ADMIN" || role === "SAAS_EDITOR") {
+      if (role === USER_ROLE.SAAS_ADMIN || role === USER_ROLE.SAAS_EDITOR) {
         // Permitir acceso
       }
       // LOGISTICS_PROVIDER y SUPERVISOR no tienen tenant, no deben ver módulos de catálogo
-      else if (role === "LOGISTICS_PROVIDER" || role === "SUPERVISOR") {
+      else if (role === USER_ROLE.LOGISTICS_PROVIDER || role === USER_ROLE.SUPERVISOR) {
         // Si requiere RETAIL, no mostrar (LOGISTICS_PROVIDER no tiene catálogo)
         if (item.requiredTenantType === "RETAIL") {
           return false;

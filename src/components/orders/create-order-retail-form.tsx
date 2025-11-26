@@ -32,6 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { LocationPicker } from "@/components/shared/location-picker";
 
 const retailOrderSchema = z.object({
   items: z
@@ -226,6 +227,42 @@ export function CreateOrderRetailForm() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Dirección de Entrega</h3>
+
+              {/* Location Picker */}
+              <FormField
+                control={form.control}
+                name="delivery_address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ubicación en el Mapa *</FormLabel>
+                    <FormControl>
+                      <LocationPicker
+                        lat={field.value?.lat}
+                        lng={field.value?.lng}
+                        onLocationChange={(lat, lng, address) => {
+                          field.onChange({
+                            ...field.value,
+                            lat,
+                            lng,
+                            street:
+                              address?.street || field.value?.street || "",
+                            city: address?.city || field.value?.city || "",
+                            state: address?.state || field.value?.state || "",
+                            zip_code:
+                              address?.zip_code || field.value?.zip_code || "",
+                            country:
+                              address?.country || field.value?.country || "",
+                          });
+                        }}
+                        disabled={createOrder.isPending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Campos de dirección (se llenan automáticamente desde el mapa) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -261,48 +298,6 @@ export function CreateOrderRetailForm() {
                       <FormLabel>País *</FormLabel>
                       <FormControl>
                         <Input disabled={createOrder.isPending} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="delivery_address.lat"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Latitud *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="any"
-                          disabled={createOrder.isPending}
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="delivery_address.lng"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Longitud *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="any"
-                          disabled={createOrder.isPending}
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
-                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

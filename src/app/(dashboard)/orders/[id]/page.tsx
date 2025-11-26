@@ -1,41 +1,48 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import { useOrder } from '@/lib/hooks/use-orders';
-import { PermissionGuard } from '@/components/auth/permission-guard';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { OrderStatusBadge } from '@/components/orders/order-status-badge';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { formatDate } from '@/lib/utils/date';
-import { formatCurrency, type CurrencyCode } from '@/lib/utils/currency';
-import { usePermissions } from '@/lib/hooks/use-permissions';
-import { AssignDriverDialog } from '@/components/orders/assign-driver-dialog';
-import { ChangeBranchDialog } from '@/components/orders/change-branch-dialog';
-import { ModifyItemsDialog } from '@/components/orders/modify-items-dialog';
-import { UpdateStatusDialog } from '@/components/orders/update-status-dialog';
-import { CancelOrderDialog } from '@/components/orders/cancel-order-dialog';
-import { RecalculateTotalsButton } from '@/components/orders/recalculate-totals-button';
-import { OrderTimeline } from '@/components/orders/order-timeline';
-import { 
-  Package, 
-  User, 
-  MapPin, 
-  Truck, 
-  Building2, 
-  Calendar, 
+import { useParams } from "next/navigation";
+import { useOrder } from "@/lib/hooks/use-orders";
+import { PermissionGuard } from "@/components/auth/permission-guard";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { OrderStatusBadge } from "@/components/orders/order-status-badge";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { formatDate } from "@/lib/utils/date";
+import { formatCurrency, type CurrencyCode } from "@/lib/utils/currency";
+import { usePermissions } from "@/lib/hooks/use-permissions";
+import { USER_ROLE } from "@/lib/constants/roles";
+import { AssignDriverDialog } from "@/components/orders/assign-driver-dialog";
+import { ChangeBranchDialog } from "@/components/orders/change-branch-dialog";
+import { ModifyItemsDialog } from "@/components/orders/modify-items-dialog";
+import { UpdateStatusDialog } from "@/components/orders/update-status-dialog";
+import { CancelOrderDialog } from "@/components/orders/cancel-order-dialog";
+import { RecalculateTotalsButton } from "@/components/orders/recalculate-totals-button";
+import { OrderTimeline } from "@/components/orders/order-timeline";
+import {
+  Package,
+  User,
+  MapPin,
+  Truck,
+  Building2,
+  Calendar,
   DollarSign,
   AlertCircle,
-  Copy
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+  Copy,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id as string;
   const { data: order, isLoading, error } = useOrder(orderId);
-  const { hasPermission } = usePermissions();
+  const { hasPermission, role } = usePermissions();
   const { toast } = useToast();
 
   if (isLoading) {
@@ -57,7 +64,9 @@ export default function OrderDetailPage() {
             <CardTitle>Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-destructive">Error al cargar la orden o orden no encontrada.</p>
+            <p className="text-destructive">
+              Error al cargar la orden o orden no encontrada.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -71,7 +80,7 @@ export default function OrderDetailPage() {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: 'Copiado',
+      title: "Copiado",
       description: `${label} copiado al portapapeles`,
     });
   };
@@ -88,7 +97,9 @@ export default function OrderDetailPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">Orden {order.order_display_number}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  Orden {order.order_display_number}
+                </h1>
                 <OrderStatusBadge status={order.status} />
                 <Badge variant="outline" className="text-xs">
                   {order.order_type}
@@ -104,7 +115,9 @@ export default function OrderDetailPage() {
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6"
-                    onClick={() => copyToClipboard(order.tracking_code, 'Código de tracking')}
+                    onClick={() =>
+                      copyToClipboard(order.tracking_code, "Código de tracking")
+                    }
                   >
                     <Copy className="h-3 w-3" />
                   </Button>
@@ -112,7 +125,7 @@ export default function OrderDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {order.priority === 'URGENT' && (
+              {order.priority === "URGENT" && (
                 <Badge variant="destructive" className="gap-1">
                   <AlertCircle className="h-3 w-3" />
                   Urgente
@@ -122,28 +135,53 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Action Bar */}
-          {hasPermission('orders', 'manage') && (
+          {hasPermission("orders", "manage") && (
             <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
               <div className="flex flex-wrap items-center gap-2">
-                <AssignDriverDialog orderId={order.id} buttonSize="sm" />
-                <ChangeBranchDialog orderId={order.id} buttonSize="sm" />
+                {/* Solo roles SAAS pueden asignar drivers (sistema automático vendrá después) */}
+                {(role === USER_ROLE.SAAS_ADMIN || role === USER_ROLE.SAAS_EDITOR) && (
+                  <AssignDriverDialog
+                    orderId={order.id}
+                    buttonSize="sm"
+                    hasDriver={!!currentDriver}
+                  />
+                )}
+                {order.order_type !== 'ON_DEMAND' && (
+                  <ChangeBranchDialog
+                    orderId={order.id}
+                    buttonSize="sm"
+                    hasBranch={!!currentBranch}
+                  />
+                )}
                 <ModifyItemsDialog
                   orderId={order.id}
+                  orderType={order.order_type}
                   currentItems={order.order_items?.map((item) => ({
                     id: item.id,
-                    product_snapshot: item.product_snapshot as Record<string, unknown>,
+                    product_snapshot: item.product_snapshot as Record<
+                      string,
+                      unknown
+                    >,
                     quantity: Number(item.quantity),
                     unit_price: Number(item.unit_price),
                     notes: item.notes || undefined,
                   }))}
                   buttonSize="sm"
                 />
-                <UpdateStatusDialog orderId={order.id} currentStatus={order.status} buttonSize="sm" />
+                <UpdateStatusDialog
+                  orderId={order.id}
+                  currentStatus={order.status}
+                  buttonSize="sm"
+                />
                 <RecalculateTotalsButton orderId={order.id} buttonSize="sm" />
               </div>
-              {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+              {order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
                 <div className="flex items-center gap-2 pl-2 border-l">
-                  <CancelOrderDialog orderId={order.id} orderNumber={order.order_display_number} buttonSize="sm" />
+                  <CancelOrderDialog
+                    orderId={order.id}
+                    orderNumber={order.order_display_number}
+                    buttonSize="sm"
+                  />
                 </div>
               )}
             </div>
@@ -156,11 +194,16 @@ export default function OrderDetailPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total
+                  </p>
                   <p className="text-2xl font-bold">
-                    {currentTotal 
-                      ? formatCurrency(Number(currentTotal.total_amount), currentTotal.currency as CurrencyCode)
-                      : 'N/A'}
+                    {currentTotal
+                      ? formatCurrency(
+                          Number(currentTotal.total_amount),
+                          currentTotal.currency as CurrencyCode
+                        )
+                      : "N/A"}
                   </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
@@ -171,8 +214,12 @@ export default function OrderDetailPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Items</p>
-                  <p className="text-2xl font-bold">{order.order_items?.length || 0}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Items
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {order.order_items?.length || 0}
+                  </p>
                 </div>
                 <Package className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -182,8 +229,12 @@ export default function OrderDetailPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Entrega Estimada</p>
-                  <p className="text-sm font-medium">{formatDate(order.estimated_delivery_at)}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Entrega Estimada
+                  </p>
+                  <p className="text-sm font-medium">
+                    {formatDate(order.estimated_delivery_at)}
+                  </p>
                 </div>
                 <Calendar className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -193,11 +244,13 @@ export default function OrderDetailPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Driver</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Driver
+                  </p>
                   <p className="text-sm font-medium">
-                    {currentDriver?.driver_user 
+                    {currentDriver?.driver_user
                       ? `${currentDriver.driver_user.first_name} ${currentDriver.driver_user.last_name}`
-                      : 'No asignado'}
+                      : "No asignado"}
                   </p>
                 </div>
                 <Truck className="h-8 w-8 text-muted-foreground" />
@@ -214,43 +267,69 @@ export default function OrderDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Información de la Orden</CardTitle>
-                <CardDescription>Detalles generales de la orden</CardDescription>
+                <CardDescription>
+                  Detalles generales de la orden
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Número de Orden</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Número de Orden
+                    </p>
                     <p className="font-medium">{order.order_display_number}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Estado</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Estado
+                    </p>
                     <OrderStatusBadge status={order.status} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Tipo</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Tipo
+                    </p>
                     <Badge variant="outline">{order.order_type}</Badge>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Prioridad</p>
-                    <Badge variant={order.priority === 'URGENT' ? 'destructive' : 'default'}>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Prioridad
+                    </p>
+                    <Badge
+                      variant={
+                        order.priority === "URGENT" ? "destructive" : "default"
+                      }
+                    >
                       {order.priority}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Fecha de Creación</p>
-                    <p className="font-medium">{formatDate(order.created_at)}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Fecha de Creación
+                    </p>
+                    <p className="font-medium">
+                      {formatDate(order.created_at)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Última Actualización</p>
-                    <p className="font-medium">{formatDate(order.updated_at)}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Última Actualización
+                    </p>
+                    <p className="font-medium">
+                      {formatDate(order.updated_at)}
+                    </p>
                   </div>
                 </div>
                 {order.scheduled_pickup_at && (
                   <>
                     <Separator />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Pickup Programado</p>
-                      <p className="font-medium">{formatDate(order.scheduled_pickup_at)}</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">
+                        Pickup Programado
+                      </p>
+                      <p className="font-medium">
+                        {formatDate(order.scheduled_pickup_at)}
+                      </p>
                     </div>
                   </>
                 )}
@@ -258,7 +337,9 @@ export default function OrderDetailPage() {
                   <>
                     <Separator />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Instrucciones Especiales</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        Instrucciones Especiales
+                      </p>
                       <p className="text-sm">{order.special_instructions}</p>
                     </div>
                   </>
@@ -270,33 +351,57 @@ export default function OrderDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Items de la Orden</CardTitle>
-                <CardDescription>{order.order_items?.length || 0} {order.order_items?.length === 1 ? 'item' : 'items'}</CardDescription>
+                <CardDescription>
+                  {order.order_items?.length || 0}{" "}
+                  {order.order_items?.length === 1 ? "item" : "items"}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {order.order_items && order.order_items.length > 0 ? (
                   <div className="space-y-3">
                     {order.order_items.map((item) => {
-                      const product = item.product_snapshot as Record<string, unknown>;
+                      const product = item.product_snapshot as Record<
+                        string,
+                        unknown
+                      >;
                       const quantity = Number(item.quantity);
                       const unitPrice = Number(item.unit_price);
                       const subtotal = quantity * unitPrice;
-                      const currency = (product.currency as string) || 'USD';
-                      
+                      const currency = (product.currency as string) || "USD";
+
                       return (
-                        <div key={item.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div
+                          key={item.id}
+                          className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                        >
                           <div className="flex-1 space-y-1">
-                            <p className="font-medium">{product.name as string || 'Producto'}</p>
+                            <p className="font-medium">
+                              {(product.name as string) || "Producto"}
+                            </p>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span>Cantidad: {quantity}</span>
                               <span>•</span>
-                              <span>Precio unitario: {formatCurrency(unitPrice, currency as CurrencyCode)}</span>
+                              <span>
+                                Precio unitario:{" "}
+                                {formatCurrency(
+                                  unitPrice,
+                                  currency as CurrencyCode
+                                )}
+                              </span>
                             </div>
                             {item.notes && (
-                              <p className="text-xs text-muted-foreground mt-1 italic">Nota: {String(item.notes)}</p>
+                              <p className="text-xs text-muted-foreground mt-1 italic">
+                                Nota: {String(item.notes)}
+                              </p>
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(subtotal, currency as CurrencyCode)}</p>
+                            <p className="font-semibold">
+                              {formatCurrency(
+                                subtotal,
+                                currency as CurrencyCode
+                              )}
+                            </p>
                           </div>
                         </div>
                       );
@@ -316,14 +421,19 @@ export default function OrderDetailPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Resumen de Totales</CardTitle>
-                  <CardDescription>Versión {currentTotal.version}</CardDescription>
+                  <CardDescription>
+                    Versión {currentTotal.version}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="font-medium">
-                        {formatCurrency(Number(currentTotal.subtotal), currentTotal.currency as CurrencyCode)}
+                        {formatCurrency(
+                          Number(currentTotal.subtotal),
+                          currentTotal.currency as CurrencyCode
+                        )}
                       </span>
                     </div>
                     {Number(currentTotal.tax_amount) > 0 && (
@@ -332,15 +442,23 @@ export default function OrderDetailPage() {
                           Impuesto ({Number(currentTotal.tax_rate) * 100}%)
                         </span>
                         <span className="font-medium">
-                          {formatCurrency(Number(currentTotal.tax_amount), currentTotal.currency as CurrencyCode)}
+                          {formatCurrency(
+                            Number(currentTotal.tax_amount),
+                            currentTotal.currency as CurrencyCode
+                          )}
                         </span>
                       </div>
                     )}
                     {Number(currentTotal.delivery_fee) > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tarifa de entrega</span>
+                        <span className="text-muted-foreground">
+                          Tarifa de entrega
+                        </span>
                         <span className="font-medium">
-                          {formatCurrency(Number(currentTotal.delivery_fee), currentTotal.currency as CurrencyCode)}
+                          {formatCurrency(
+                            Number(currentTotal.delivery_fee),
+                            currentTotal.currency as CurrencyCode
+                          )}
                         </span>
                       </div>
                     )}
@@ -348,7 +466,11 @@ export default function OrderDetailPage() {
                       <div className="flex justify-between text-sm text-destructive">
                         <span>Descuento</span>
                         <span className="font-medium">
-                          -{formatCurrency(Number(currentTotal.discount_amount), currentTotal.currency as CurrencyCode)}
+                          -
+                          {formatCurrency(
+                            Number(currentTotal.discount_amount),
+                            currentTotal.currency as CurrencyCode
+                          )}
                         </span>
                       </div>
                     )}
@@ -356,7 +478,10 @@ export default function OrderDetailPage() {
                     <div className="flex justify-between">
                       <span className="text-base font-semibold">Total</span>
                       <span className="text-xl font-bold">
-                        {formatCurrency(Number(currentTotal.total_amount), currentTotal.currency as CurrencyCode)}
+                        {formatCurrency(
+                          Number(currentTotal.total_amount),
+                          currentTotal.currency as CurrencyCode
+                        )}
                       </span>
                     </div>
                   </div>
@@ -376,29 +501,42 @@ export default function OrderDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {order.customer_snapshot && typeof order.customer_snapshot === 'object' ? (
+                {order.customer_snapshot &&
+                typeof order.customer_snapshot === "object" ? (
                   <>
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Nombre</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Nombre
+                      </p>
                       <p className="font-medium">
-                        {String(order.customer_snapshot?.name || 'N/A')}
+                        {String(order.customer_snapshot?.name || "N/A")}
                       </p>
                     </div>
                     {order.customer_snapshot?.phone && (
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Teléfono</p>
-                        <p className="font-medium">{String(order.customer_snapshot.phone)}</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          Teléfono
+                        </p>
+                        <p className="font-medium">
+                          {String(order.customer_snapshot.phone)}
+                        </p>
                       </div>
                     )}
                     {order.customer_snapshot?.email && (
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Email</p>
-                        <p className="font-medium text-sm break-all">{String(order.customer_snapshot.email)}</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          Email
+                        </p>
+                        <p className="font-medium text-sm break-all">
+                          {String(order.customer_snapshot.email)}
+                        </p>
                       </div>
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No hay información del cliente</p>
+                  <p className="text-sm text-muted-foreground">
+                    No hay información del cliente
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -412,34 +550,43 @@ export default function OrderDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {order.delivery_address && typeof order.delivery_address === 'object' ? (
+                {order.delivery_address &&
+                typeof order.delivery_address === "object" ? (
                   <>
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Dirección</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Dirección
+                      </p>
                       <p className="font-medium text-sm">
-                        {String(order.delivery_address?.street || '')}
-                        {order.delivery_address?.city ? `, ${String(order.delivery_address.city || '')}` : ''}
+                        {String(order.delivery_address?.street || "")}
+                        {order.delivery_address?.city
+                          ? `, ${String(order.delivery_address.city || "")}`
+                          : ""}
                       </p>
                       {order.delivery_address?.state ? (
                         <p className="text-sm text-muted-foreground">
-                          {String(order.delivery_address.state || '')}
+                          {String(order.delivery_address.state || "")}
                         </p>
                       ) : null}
                       {order.delivery_address?.country ? (
                         <p className="text-sm text-muted-foreground">
-                          {String(order.delivery_address.country || '')}
+                          {String(order.delivery_address.country || "")}
                         </p>
                       ) : null}
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Coordenadas</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Coordenadas
+                      </p>
                       <p className="font-mono text-xs">
                         {order.delivery_lat}, {order.delivery_lng}
                       </p>
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No hay dirección de entrega</p>
+                  <p className="text-sm text-muted-foreground">
+                    No hay dirección de entrega
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -458,37 +605,57 @@ export default function OrderDetailPage() {
                     {currentDriver.driver_user ? (
                       <>
                         <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Nombre</p>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                            Nombre
+                          </p>
                           <p className="font-medium">
-                            {currentDriver.driver_user.first_name} {currentDriver.driver_user.last_name}
+                            {currentDriver.driver_user.first_name}{" "}
+                            {currentDriver.driver_user.last_name}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Email</p>
-                          <p className="font-medium text-sm break-all">{currentDriver.driver_user.email}</p>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                            Email
+                          </p>
+                          <p className="font-medium text-sm break-all">
+                            {currentDriver.driver_user.email}
+                          </p>
                         </div>
                         {currentDriver.driver_user.phone && (
                           <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Teléfono</p>
-                            <p className="font-medium">{currentDriver.driver_user.phone}</p>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              Teléfono
+                            </p>
+                            <p className="font-medium">
+                              {currentDriver.driver_user.phone}
+                            </p>
                           </div>
                         )}
                         <Separator />
                       </>
                     ) : null}
                     {(() => {
-                      const driver = currentDriver.driver_snapshot as Record<string, unknown>;
+                      const driver = currentDriver.driver_snapshot as Record<
+                        string,
+                        unknown
+                      >;
                       return (
                         <>
                           {driver.driving_license && (
                             <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Licencia</p>
-                              <p className="font-medium text-sm">{String(driver.driving_license)}</p>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Licencia
+                              </p>
+                              <p className="font-medium text-sm">
+                                {String(driver.driving_license)}
+                              </p>
                             </div>
                           )}
                           {driver.work_type && (
                             <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Tipo de Trabajo</p>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Tipo de Trabajo
+                              </p>
                               <Badge variant="outline" className="text-xs">
                                 {String(driver.work_type)}
                               </Badge>
@@ -498,62 +665,100 @@ export default function OrderDetailPage() {
                       );
                     })()}
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Asignado el</p>
-                      <p className="font-medium text-sm">{formatDate(currentDriver.assigned_at || currentDriver.created_at)}</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Asignado el
+                      </p>
+                      <p className="font-medium text-sm">
+                        {formatDate(
+                          currentDriver.assigned_at || currentDriver.created_at
+                        )}
+                      </p>
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-4">
                     <Truck className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                    <p className="text-sm text-muted-foreground">No hay driver asignado</p>
+                    <p className="text-sm text-muted-foreground">
+                      No hay driver asignado
+                    </p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Branch Assignment */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Sucursal Asignada
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {currentBranch && currentBranch.branch_snapshot && typeof currentBranch.branch_snapshot === 'object' ? (
+            {/* Branch Assignment - Solo para órdenes RETAIL */}
+            {order.order_type !== 'ON_DEMAND' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Sucursal Asignada
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                {currentBranch &&
+                currentBranch.branch_snapshot &&
+                typeof currentBranch.branch_snapshot === "object" ? (
                   (() => {
-                    const branch = currentBranch.branch_snapshot as Record<string, unknown>;
+                    const branch = currentBranch.branch_snapshot as Record<
+                      string,
+                      unknown
+                    >;
                     return (
                       <div className="space-y-3">
                         {branch.name ? (
                           <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Nombre</p>
-                            <p className="font-medium">{String(branch.name || '')}</p>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              Nombre
+                            </p>
+                            <p className="font-medium">
+                              {String(branch.name || "")}
+                            </p>
                           </div>
                         ) : null}
                         {branch.address ? (
                           <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Dirección</p>
-                            <p className="font-medium text-sm">{String(branch.address || '')}</p>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              Dirección
+                            </p>
+                            <p className="font-medium text-sm">
+                              {String(branch.address || "")}
+                            </p>
                           </div>
                         ) : null}
                         {branch.contact_phone ? (
                           <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Teléfono</p>
-                            <p className="font-medium text-sm">{String(branch.contact_phone || '')}</p>
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              Teléfono
+                            </p>
+                            <p className="font-medium text-sm">
+                              {String(branch.contact_phone || "")}
+                            </p>
                           </div>
                         ) : null}
                         {branch.is_main !== undefined && (
                           <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Tipo</p>
-                            <Badge variant={branch.is_main ? 'default' : 'outline'} className="text-xs">
-                              {branch.is_main ? 'Principal' : 'Secundaria'}
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              Tipo
+                            </p>
+                            <Badge
+                              variant={branch.is_main ? "default" : "outline"}
+                              className="text-xs"
+                            >
+                              {branch.is_main ? "Principal" : "Secundaria"}
                             </Badge>
                           </div>
                         )}
                         <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Asignada el</p>
-                          <p className="font-medium text-sm">{formatDate(currentBranch.assigned_at || currentBranch.created_at)}</p>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                            Asignada el
+                          </p>
+                          <p className="font-medium text-sm">
+                            {formatDate(
+                              currentBranch.assigned_at ||
+                                currentBranch.created_at
+                            )}
+                          </p>
                         </div>
                       </div>
                     );
@@ -561,11 +766,14 @@ export default function OrderDetailPage() {
                 ) : (
                   <div className="text-center py-4">
                     <Building2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                    <p className="text-sm text-muted-foreground">No hay sucursal asignada</p>
+                    <p className="text-sm text-muted-foreground">
+                      No hay sucursal asignada
+                    </p>
                   </div>
                 )}
               </CardContent>
             </Card>
+            )}
           </div>
         </div>
 

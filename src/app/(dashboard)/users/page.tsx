@@ -229,13 +229,13 @@ export default function UsersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="OWNER">Owner</SelectItem>
+                    <SelectItem value="OWNER">Propietario</SelectItem>
                     <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
-                    <SelectItem value="MERCHANT_USER">Merchant User</SelectItem>
-                    <SelectItem value="LOGISTICS_PROVIDER">Logistics Provider</SelectItem>
-                    <SelectItem value="CUSTOMER">Customer</SelectItem>
-                    <SelectItem value="SAAS_ADMIN">SAAS Admin</SelectItem>
-                    <SelectItem value="SAAS_EDITOR">SAAS Editor</SelectItem>
+                    <SelectItem value="MERCHANT_USER">Usuario del Comercio</SelectItem>
+                    <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
+                    <SelectItem value="CUSTOMER">Cliente</SelectItem>
+                    <SelectItem value="SAAS_ADMIN">Administrador SAAS</SelectItem>
+                    <SelectItem value="SAAS_EDITOR">Editor SAAS</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select

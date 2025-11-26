@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useOrders, type OrdersFilters } from '@/lib/hooks/use-orders';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
@@ -27,10 +27,25 @@ import type { Order } from '@/types/api';
 
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const { tenant } = useTenant();
+  
+  // Inicializar filtros con el tipo de tenant si está disponible
+  // Si el tenant es ON_DEMAND, filtrar por ON_DEMAND
+  // Si el tenant es RETAIL, filtrar por RETAIL
+  // Si el tenant es HYBRID o no hay tenant, no filtrar por tipo
+  const getInitialOrderType = useCallback((): OrdersFilters['order_type'] => {
+    if (!tenant) return undefined;
+    if (tenant.type === 'ON_DEMAND') return 'ON_DEMAND';
+    if (tenant.type === 'RETAIL') return 'RETAIL';
+    // HYBRID permite ambos tipos, no filtrar automáticamente
+    return undefined;
+  }, [tenant]);
+
   const [filters, setFilters] = useState<OrdersFilters>({
     page: 1,
     limit: 10,
     search: '',
+    order_type: getInitialOrderType(),
   });
 
   // Debounce search term
@@ -45,9 +60,18 @@ export default function OrdersPage() {
     }));
   }, [debouncedSearch]);
 
+  // Actualizar order_type cuando cambia el tenant
+  useEffect(() => {
+    const initialOrderType = getInitialOrderType();
+    setFilters((prev) => ({
+      ...prev,
+      order_type: initialOrderType,
+      page: 1, // Reset to first page when tenant changes
+    }));
+  }, [tenant?.id, tenant?.type, getInitialOrderType]);
+
   const { data: ordersResponse, isLoading, error } = useOrders(filters);
   const { hasPermission } = usePermissions();
-  const { tenant } = useTenant();
 
   const orders = ordersResponse?.data || [];
   const totalCount = ordersResponse?.total;
