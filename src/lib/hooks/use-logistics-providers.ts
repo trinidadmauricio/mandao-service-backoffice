@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../api/client';
-import { endpoints } from '../api/endpoints';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "../api/client";
+import { endpoints } from "../api/endpoints";
 
 export interface LogisticsProvider {
   id: string;
@@ -10,9 +10,9 @@ export interface LogisticsProvider {
   representative_name: string;
   representative_phone: string;
   representative_document: string;
-  verification_status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verification_status: "PENDING" | "VERIFIED" | "REJECTED";
   verification_documents?: Record<string, unknown>;
-  status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  status: "ACTIVE" | "SUSPENDED" | "INACTIVE";
   created_at: string;
   updated_at: string;
 }
@@ -24,9 +24,9 @@ export interface CreateLogisticsProviderData {
   representative_name: string;
   representative_phone: string;
   representative_document: string;
-  verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verification_status?: "PENDING" | "VERIFIED" | "REJECTED";
   verification_documents?: Record<string, unknown>;
-  status?: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  status?: "ACTIVE" | "SUSPENDED" | "INACTIVE";
 }
 
 export interface UpdateLogisticsProviderData {
@@ -35,17 +35,41 @@ export interface UpdateLogisticsProviderData {
   representative_name?: string;
   representative_phone?: string;
   representative_document?: string;
-  verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verification_status?: "PENDING" | "VERIFIED" | "REJECTED";
   verification_documents?: Record<string, unknown>;
-  status?: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  status?: "ACTIVE" | "SUSPENDED" | "INACTIVE";
 }
 
-export function useLogisticsProviders() {
+export interface LogisticsProvidersFilters {
+  search?: string;
+  status?: "ACTIVE" | "SUSPENDED" | "INACTIVE";
+  verification_status?: "PENDING" | "VERIFIED" | "REJECTED";
+  is_global?: boolean;
+}
+
+export function useLogisticsProviders(filters?: LogisticsProvidersFilters) {
   return useQuery({
-    queryKey: ['logistics-providers'],
+    queryKey: ["logistics-providers", filters],
     queryFn: async () => {
+      const params: Record<string, string | boolean> = {};
+
+      if (filters?.search) {
+        params.search = filters.search;
+      }
+      if (filters?.status) {
+        params.status = filters.status;
+      }
+      if (filters?.verification_status) {
+        params.verification_status = filters.verification_status;
+      }
+      if (filters?.is_global !== undefined) {
+        params.is_global = filters.is_global;
+      }
+
+      const config = Object.keys(params).length > 0 ? { params } : undefined;
       const response = await apiClient.get<{ data: LogisticsProvider[] }>(
-        endpoints.logisticsProviders.list
+        endpoints.logisticsProviders.list,
+        config
       );
       return response.data.data;
     },
@@ -54,7 +78,7 @@ export function useLogisticsProviders() {
 
 export function useLogisticsProvider(providerId: string) {
   return useQuery({
-    queryKey: ['logistics-provider', providerId],
+    queryKey: ["logistics-provider", providerId],
     queryFn: async () => {
       const response = await apiClient.get<{ data: LogisticsProvider }>(
         endpoints.logisticsProviders.get(providerId)
@@ -77,7 +101,7 @@ export function useCreateLogisticsProvider() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['logistics-providers'] });
+      queryClient.invalidateQueries({ queryKey: ["logistics-providers"] });
     },
   });
 }
@@ -86,7 +110,13 @@ export function useUpdateLogisticsProvider() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateLogisticsProviderData }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateLogisticsProviderData;
+    }) => {
       const response = await apiClient.patch<{ data: LogisticsProvider }>(
         endpoints.logisticsProviders.update(id),
         data
@@ -94,8 +124,10 @@ export function useUpdateLogisticsProvider() {
       return response.data.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['logistics-providers'] });
-      queryClient.invalidateQueries({ queryKey: ['logistics-provider', data.id] });
+      queryClient.invalidateQueries({ queryKey: ["logistics-providers"] });
+      queryClient.invalidateQueries({
+        queryKey: ["logistics-provider", data.id],
+      });
     },
   });
 }
@@ -108,7 +140,7 @@ export function useDeleteLogisticsProvider() {
       await apiClient.delete(endpoints.logisticsProviders.delete(id));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['logistics-providers'] });
+      queryClient.invalidateQueries({ queryKey: ["logistics-providers"] });
     },
   });
 }

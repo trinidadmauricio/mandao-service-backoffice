@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/utils/date';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatCurrency, type CurrencyCode } from '@/lib/utils/currency';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -143,7 +143,7 @@ export default function PaymentsTransactionsPage() {
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <p className="font-medium">
-                              {formatCurrency(transaction.amount, transaction.currency)}
+                              {formatCurrency(transaction.amount, transaction.currency as CurrencyCode)}
                             </p>
                             <Badge variant="outline">
                               {transactionTypeLabels[transaction.transaction_type] || transaction.transaction_type}

@@ -18,6 +18,8 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface RecalculateTotalsButtonProps {
   orderId: string;
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+  buttonClassName?: string;
 }
 
 export function RecalculateTotalsButton({ orderId, buttonSize = 'default', buttonClassName }: RecalculateTotalsButtonProps) {
