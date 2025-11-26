@@ -35,7 +35,7 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
-  role: 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
+  role: 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'DRIVER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
   tenant_id?: string | null; // Opcional para usuarios SAAS_ADMIN que no tienen tenant
   logistics_provider_id?: string | null; // Opcional para usuarios LOGISTICS_PROVIDER
   email_verified: boolean;

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateUser, useUpdateUser, useUser } from '@/lib/hooks/use-users';
+import { useAuth } from '@/lib/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,7 +35,7 @@ const userSchema = z
     first_name: z.string().min(1, 'El nombre es requerido'),
     last_name: z.string().min(1, 'El apellido es requerido'),
     phone: z.string().optional(),
-    role: z.enum(['SAAS_ADMIN', 'SAAS_EDITOR', 'OWNER', 'SUPERVISOR', 'MERCHANT_USER', 'CUSTOMER', 'LOGISTICS_PROVIDER']),
+    role: z.enum(['SAAS_ADMIN', 'SAAS_EDITOR', 'OWNER', 'SUPERVISOR', 'MERCHANT_USER', 'LOGISTICS_PROVIDER', 'DRIVER']),
     status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).default('ACTIVE'),
   })
   .refine(() => {
@@ -52,10 +53,14 @@ interface UserFormProps {
 export function UserForm({ userId }: UserFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const isEditing = !!userId;
   const { data: user, isLoading: isLoadingUser } = useUser(userId || '');
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  
+  // Determinar qué roles se pueden crear según el rol del usuario actual
+  const canCreateSupervisor = currentUser?.role === 'LOGISTICS_PROVIDER';
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -103,6 +108,14 @@ export function UserForm({ userId }: UserFormProps) {
         password: data.password || undefined,
         // No enviar password vacío al actualizar si no se proporciona
         ...(isEditing && !data.password && { password: undefined }),
+        // Si se está creando un SUPERVISOR y el usuario actual es LOGISTICS_PROVIDER,
+        // asignar automáticamente su logistics_provider_id
+        ...(data.role === 'SUPERVISOR' && 
+            !isEditing && 
+            currentUser?.role === 'LOGISTICS_PROVIDER' && 
+            currentUser?.logistics_provider_id && {
+              logistics_provider_id: currentUser.logistics_provider_id,
+            }),
       };
 
       if (isEditing && userId) {
@@ -268,13 +281,28 @@ export function UserForm({ userId }: UserFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
-                        <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
-                        <SelectItem value="OWNER">Propietario</SelectItem>
-                        <SelectItem value="CUSTOMER">Cliente</SelectItem>
-                        <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
-                        <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
-                        <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
+                        {allowedRoles.includes('MERCHANT_USER') && (
+                          <SelectItem value="MERCHANT_USER">Usuario</SelectItem>
+                        )}
+                        {allowedRoles.includes('SUPERVISOR') && (
+                          <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                        )}
+                        {allowedRoles.includes('OWNER') && (
+                          <SelectItem value="OWNER">Propietario</SelectItem>
+                        )}
+                        {/* CUSTOMER no debe aparecer - solo se crea desde storefront */}
+                        {allowedRoles.includes('LOGISTICS_PROVIDER') && (
+                          <SelectItem value="LOGISTICS_PROVIDER">Proveedor Logístico</SelectItem>
+                        )}
+                        {allowedRoles.includes('DRIVER') && (
+                          <SelectItem value="DRIVER">Conductor</SelectItem>
+                        )}
+                        {allowedRoles.includes('SAAS_ADMIN') && (
+                          <SelectItem value="SAAS_ADMIN">Admin SaaS</SelectItem>
+                        )}
+                        {allowedRoles.includes('SAAS_EDITOR') && (
+                          <SelectItem value="SAAS_EDITOR">Editor SaaS</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
