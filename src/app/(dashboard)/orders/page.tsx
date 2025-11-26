@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useOrders, type OrdersFilters } from '@/lib/hooks/use-orders';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
@@ -11,7 +11,7 @@ import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Eye } from 'lucide-react';
+import { Plus, Eye, Search } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils/date';
 import {
@@ -21,14 +21,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import type { Order } from '@/types/api';
 
 export default function OrdersPage() {
+  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<OrdersFilters>({
     page: 1,
     limit: 10,
     search: '',
   });
+
+  // Debounce search term
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // Update filters when debounced search changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      search: debouncedSearch || undefined,
+      page: 1, // Reset to first page when search changes
+    }));
+  }, [debouncedSearch]);
+
   const { data: ordersResponse, isLoading, error } = useOrders(filters);
   const { hasPermission } = usePermissions();
   const { tenant } = useTenant();
@@ -46,6 +62,12 @@ export default function OrdersPage() {
     { value: 'DELIVERED', label: 'Entregada' },
     { value: 'CANCELLED', label: 'Cancelada' },
     { value: 'FAILED', label: 'Fallida' },
+  ];
+
+  const orderTypeOptions: Array<{ value: OrdersFilters['order_type']; label: string }> = [
+    { value: undefined, label: 'Todos' },
+    { value: 'RETAIL', label: 'Retail' },
+    { value: 'ON_DEMAND', label: 'On-Demand' },
   ];
 
   const columns: ColumnDef<Order>[] = useMemo(
@@ -174,6 +196,15 @@ export default function OrdersPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Lista de Órdenes</CardTitle>
               <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por número o tracking..."
+                    className="pl-8 w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
                 <Select
                   value={filters.status || 'all'}
                   onValueChange={(value) =>
@@ -195,6 +226,27 @@ export default function OrdersPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select
+                  value={filters.order_type || 'all'}
+                  onValueChange={(value) =>
+                    setFilters({
+                      ...filters,
+                      order_type: value === 'all' ? undefined : (value as OrdersFilters['order_type']),
+                      page: 1, // Reset to first page when filter changes
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filtrar por tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {orderTypeOptions.map((option) => (
+                      <SelectItem key={option.value || 'all'} value={option.value || 'all'}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>
@@ -202,10 +254,6 @@ export default function OrdersPage() {
             <DataTable
               columns={columns}
               data={orders}
-              searchKey="order_display_number"
-              searchPlaceholder="Buscar por número o tracking..."
-              searchValue={filters.search}
-              onSearchChange={(value) => setFilters({ ...filters, search: value, page: 1 })}
               pageSize={filters.limit || 10}
               totalCount={totalCount}
               currentPage={filters.page || 1}
