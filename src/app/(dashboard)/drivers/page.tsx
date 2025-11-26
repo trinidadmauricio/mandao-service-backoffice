@@ -171,7 +171,7 @@ export default function DriversPage() {
 
   return (
     <RoleGuard
-      allowedRoles={['OWNER', 'SUPERVISOR', 'LOGISTICS_PROVIDER']}
+      allowedRoles={['SUPERVISOR', 'LOGISTICS_PROVIDER']}
       requiredPermission={{ resource: 'drivers', action: 'read' }}
       fallback={<div>No tienes permisos para acceder a esta página</div>}
     >

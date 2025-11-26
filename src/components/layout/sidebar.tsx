@@ -75,14 +75,14 @@ const navItems: NavItem[] = [
     href: "/drivers",
     icon: Truck,
     requiredPermission: { resource: "drivers", action: "read" },
-    allowedRoles: ["OWNER", "SUPERVISOR", "LOGISTICS_PROVIDER"],
+    allowedRoles: ["SUPERVISOR", "LOGISTICS_PROVIDER"],
   },
   {
     title: "Vehículos",
     href: "/vehicles",
     icon: Car,
     requiredPermission: { resource: "vehicles", action: "read" },
-    allowedRoles: ["OWNER", "SUPERVISOR", "LOGISTICS_PROVIDER"],
+    allowedRoles: ["SUPERVISOR", "LOGISTICS_PROVIDER"],
   },
   {
     title: "Sucursales",
@@ -104,14 +104,14 @@ const navItems: NavItem[] = [
     href: "/delivery-zones",
     icon: Navigation,
     requiredPermission: { resource: "delivery-zones", action: "read" },
-    allowedRoles: ["OWNER", "SUPERVISOR", "LOGISTICS_PROVIDER"],
+    allowedRoles: ["SUPERVISOR", "LOGISTICS_PROVIDER"],
   },
   {
     title: "Tarifas de Entrega",
     href: "/delivery-rates",
     icon: DollarSign,
     requiredPermission: { resource: "delivery-rates", action: "read" },
-    allowedRoles: ["OWNER", "SUPERVISOR", "LOGISTICS_PROVIDER"],
+    allowedRoles: ["SUPERVISOR", "LOGISTICS_PROVIDER"],
   },
   {
     title: "Usuarios",
@@ -153,7 +153,6 @@ const navItems: NavItem[] = [
     icon: Truck,
     requiredPermission: { resource: "logistics-providers", action: "read" },
     allowedRoles: [
-      "OWNER",
       "SUPERVISOR",
       "LOGISTICS_PROVIDER",
       "SAAS_ADMIN",

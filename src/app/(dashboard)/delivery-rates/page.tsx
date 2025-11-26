@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useDeliveryRates, useDeleteDeliveryRate } from '@/lib/hooks/use-delivery-rates';
-import { PermissionGuard } from '@/components/auth/permission-guard';
+import { RoleGuard } from '@/components/auth/role-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,10 +50,9 @@ export default function DeliveryRatesPage() {
   };
 
   return (
-    <PermissionGuard
-      resource="delivery-rates"
-      action="read"
-      allowedTenantTypes={['ON_DEMAND', 'HYBRID']}
+    <RoleGuard
+      allowedRoles={['SUPERVISOR', 'LOGISTICS_PROVIDER']}
+      requiredPermission={{ resource: 'delivery-rates', action: 'read' }}
       fallback={
         <div className="py-6">
           <div className="text-center p-8">
@@ -191,7 +190,7 @@ export default function DeliveryRatesPage() {
           </Card>
         </div>
       )}
-    </PermissionGuard>
+    </RoleGuard>
   );
 }
 

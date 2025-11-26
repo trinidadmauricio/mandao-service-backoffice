@@ -64,7 +64,7 @@ export default function DeliveryRateDetailPage() {
         </div>
         <RoleGuard
           requiredPermission={{ resource: 'delivery-rates', action: 'update' }}
-          allowedRoles={['OWNER', 'SUPERVISOR']}
+          allowedRoles={['SUPERVISOR', 'LOGISTICS_PROVIDER']}
         >
           <Link href={`/delivery-rates/${rate.id}/edit`}>
             <Button>
