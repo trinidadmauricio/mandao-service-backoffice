@@ -7,7 +7,7 @@ export interface Tenant {
   id: string;
   slug: string;
   name: string;
-  type: 'RETAIL' | 'ON_DEMAND' | 'HYBRID';
+  type: 'RETAIL' | 'ON_DEMAND';
   subscription_status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
   default_currency: string;
   default_locale: string;
@@ -43,9 +43,8 @@ export function useTenant(tenantId?: string) {
     tenant,
     isLoading,
     error,
-    isRetail: tenant?.type === 'RETAIL' || tenant?.type === 'HYBRID',
-    isOnDemand: tenant?.type === 'ON_DEMAND' || tenant?.type === 'HYBRID',
-    isHybrid: tenant?.type === 'HYBRID',
+    isRetail: tenant?.type === 'RETAIL',
+    isOnDemand: tenant?.type === 'ON_DEMAND',
   };
 }
 
