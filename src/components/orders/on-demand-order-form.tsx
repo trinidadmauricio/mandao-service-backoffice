@@ -34,6 +34,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { Plus, Trash2 } from "lucide-react";
+import { LocationPicker } from "@/components/shared/location-picker";
 
 const onDemandOrderSchema = z.object({
   customer_snapshot: z.object({
@@ -240,6 +241,39 @@ export function OnDemandOrderForm() {
             {/* Delivery Address */}
             <div className="border rounded-lg p-4 space-y-4">
               <h3 className="font-medium">Dirección de Entrega</h3>
+              
+              {/* Location Picker */}
+              <FormField
+                control={form.control}
+                name="delivery_address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ubicación en el Mapa *</FormLabel>
+                    <FormControl>
+                      <LocationPicker
+                        lat={field.value?.lat}
+                        lng={field.value?.lng}
+                        onLocationChange={(lat, lng, address) => {
+                          field.onChange({
+                            ...field.value,
+                            lat,
+                            lng,
+                            street: address?.street || field.value?.street || '',
+                            city: address?.city || field.value?.city || '',
+                            state: address?.state || field.value?.state || '',
+                            zip_code: address?.zip_code || field.value?.zip_code || '',
+                            country: address?.country || field.value?.country || '',
+                          });
+                        }}
+                        disabled={isPending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Campos de dirección (se llenan automáticamente desde el mapa) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -306,50 +340,6 @@ export function OnDemandOrderForm() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="delivery_address.lat"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Latitud *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="any"
-                            disabled={isPending}
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseFloat(e.target.value) || 0)
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="delivery_address.lng"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Longitud *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="any"
-                            disabled={isPending}
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseFloat(e.target.value) || 0)
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
               </div>
             </div>
 

@@ -47,6 +47,11 @@ export const endpoints = {
     rating: (id: string) => `${API_BASE}/orders/${id}/rating`,
     publicTracking: (trackingCode: string) => `/api/public/orders/${trackingCode}`,
   },
+  // Geocoding
+  geocoding: {
+    search: `${API_BASE}/geocoding/search`,
+    reverse: `${API_BASE}/geocoding/reverse`,
+  },
   // Drivers
   drivers: {
     list: `${API_BASE}/drivers`,
