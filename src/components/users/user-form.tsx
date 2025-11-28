@@ -173,6 +173,14 @@ export function UserForm({ userId }: UserFormProps) {
             currentUser?.logistics_provider_id && {
               logistics_provider_id: currentUser.logistics_provider_id,
             }),
+        // Si se está creando un DRIVER y el usuario actual es LOGISTICS_PROVIDER o SUPERVISOR,
+        // asignar automáticamente su logistics_provider_id
+        ...(data.role === USER_ROLE.DRIVER && 
+            !isEditing && 
+            (currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER || currentUser?.role === USER_ROLE.SUPERVISOR) && 
+            currentUser?.logistics_provider_id && {
+              logistics_provider_id: currentUser.logistics_provider_id,
+            }),
       };
 
       if (isEditing && userId) {
@@ -510,11 +518,19 @@ export function UserForm({ userId }: UserFormProps) {
                         {currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER && (
                           <>
                             <SelectItem value={USER_ROLE.SUPERVISOR}>Supervisor</SelectItem>
+                            <SelectItem value={USER_ROLE.DRIVER}>Conductor</SelectItem>
+                          </>
+                        )}
+
+                        {/* Roles visibles para SUPERVISOR */}
+                        {currentUser?.role === USER_ROLE.SUPERVISOR && (
+                          <>
+                            <SelectItem value={USER_ROLE.DRIVER}>Conductor</SelectItem>
                           </>
                         )}
 
                         {/* Otros roles no pueden crear usuarios */}
-                        {/* CUSTOMER y DRIVER nunca se pueden crear desde el backoffice */}
+                        {/* CUSTOMER nunca se puede crear desde el backoffice */}
                       </SelectContent>
                     </Select>
                     <FormMessage />

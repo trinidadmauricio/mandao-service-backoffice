@@ -7,7 +7,7 @@ export interface UsersFilters {
   page?: number;
   limit?: number;
   search?: string;
-  role?: 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
+  role?: 'OWNER' | 'SUPERVISOR' | 'MERCHANT_USER' | 'LOGISTICS_PROVIDER' | 'DRIVER' | 'CUSTOMER' | 'SAAS_ADMIN' | 'SAAS_EDITOR';
   status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 }
 
