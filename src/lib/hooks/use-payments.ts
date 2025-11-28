@@ -5,18 +5,18 @@ import { endpoints } from '../api/endpoints';
 export interface PaymentTransaction {
   id: string;
   tenant_id: string;
-  order_id: string;
+  order_id: string | null; // Puede ser null si la transacción no está asociada a una orden
   transaction_type: 'CHARGE' | 'REFUND' | 'AUTHORIZATION' | 'CAPTURE';
   payment_method: 'CARD' | 'CASH' | 'TRANSFER' | 'WALLET';
   amount: number;
   currency: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
-  payment_intent_id?: string;
-  charge_id?: string;
-  refund_id?: string;
-  card_last4?: string;
-  card_brand?: string;
-  metadata?: Record<string, unknown>;
+  payment_intent_id?: string | null;
+  charge_id?: string | null;
+  refund_id?: string | null;
+  card_last4?: string | null;
+  card_brand?: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }

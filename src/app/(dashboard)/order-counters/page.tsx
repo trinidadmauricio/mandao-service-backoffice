@@ -27,7 +27,7 @@ export default function OrderCountersPage() {
   if (error) {
     return (
       <RoleGuard
-        allowedRoles={['OWNER', 'SUPERVISOR']}
+        allowedRoles={['SAAS_ADMIN', 'SAAS_EDITOR']}
         fallback={<div>No tienes permisos para acceder a esta página</div>}
       >
         <div className="space-y-6">
@@ -55,7 +55,7 @@ export default function OrderCountersPage() {
 
   return (
     <RoleGuard
-      allowedRoles={['OWNER', 'SUPERVISOR']}
+      allowedRoles={['SAAS_ADMIN', 'SAAS_EDITOR']}
       fallback={<div>No tienes permisos para acceder a esta página</div>}
     >
       <div className="space-y-6">

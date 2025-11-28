@@ -105,16 +105,25 @@ export default function BrandsPage() {
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div className="flex items-center space-x-4">
-                    {brand.logo_url && (
-                      <div className="relative h-12 w-12">
+                    <div className="relative h-12 w-12 flex-shrink-0">
+                      {brand.logo_url ? (
                         <Image
                           src={brand.logo_url}
                           alt={brand.name}
                           fill
                           className="object-contain"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <div
+                          className="w-full h-full rounded-md flex items-center justify-center text-white font-semibold text-xs"
+                          style={{
+                            backgroundColor: `hsl(${brand.id.charCodeAt(0) * 137.508 % 360}, 70%, 50%)`,
+                          }}
+                        >
+                          {brand.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
                     <div>
                       <p className="font-medium">{brand.name}</p>
                       {brand.description && (

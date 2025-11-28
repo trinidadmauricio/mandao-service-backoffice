@@ -21,7 +21,7 @@ interface DriversChartProps {
 
 export function DriversChart({ data }: DriversChartProps) {
   // Preparar datos para gráficos
-  const driversData = data.drivers
+  const driversData = (data.drivers || [])
     .sort((a, b) => b.total_deliveries - a.total_deliveries)
     .slice(0, 10) // Top 10 drivers
     .map((driver) => ({

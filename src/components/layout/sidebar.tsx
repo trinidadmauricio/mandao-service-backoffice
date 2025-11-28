@@ -21,7 +21,6 @@ import {
   Navigation,
   DollarSign,
   Crown,
-  Hash,
   Ruler,
 } from "lucide-react";
 
@@ -140,13 +139,6 @@ const navItems: NavItem[] = [
     href: "/reports",
     icon: BarChart3,
     requiredPermission: { resource: "reports", action: "read" },
-  },
-  {
-    title: "Contadores",
-    href: "/order-counters",
-    icon: Hash,
-    requiredPermission: { resource: "order-counters", action: "read" },
-    allowedRoles: ["SAAS_ADMIN", "SAAS_EDITOR"],
   },
   {
     title: "Proveedores",
