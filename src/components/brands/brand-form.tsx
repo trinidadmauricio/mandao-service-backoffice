@@ -204,15 +204,31 @@ export function BrandForm({ brandId }: BrandFormProps) {
                       {...field}
                     />
                   </FormControl>
-                  {brand?.logo_url && (
+                  {field.value && (
                     <div className="mt-2">
                       <div className="relative h-20 w-20 border rounded overflow-hidden">
                         <Image
-                          src={brand.logo_url}
-                          alt={brand.name}
+                          src={field.value}
+                          alt={form.watch('name') || 'Logo'}
                           fill
                           className="object-contain"
+                          onError={(e) => {
+                            // Si la imagen falla, ocultar el componente Image
+                            e.currentTarget.style.display = 'none';
+                          }}
                         />
+                      </div>
+                    </div>
+                  )}
+                  {!field.value && form.watch('name') && (
+                    <div className="mt-2">
+                      <div
+                        className="h-20 w-20 border rounded flex items-center justify-center text-white font-semibold text-lg"
+                        style={{
+                          backgroundColor: `hsl(${(form.watch('name') || '').charCodeAt(0) * 137.508 % 360}, 70%, 50%)`,
+                        }}
+                      >
+                        {form.watch('name')?.charAt(0).toUpperCase() || '?'}
                       </div>
                     </div>
                   )}

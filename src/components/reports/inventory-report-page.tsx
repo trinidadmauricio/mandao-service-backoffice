@@ -39,7 +39,7 @@ export function InventoryReportPage() {
     );
   }
 
-  const lowStockProducts = report?.products.filter(
+  const lowStockProducts = report?.products?.filter(
     (product) => product.stock_quantity <= product.min_stock_level
   ) || [];
 

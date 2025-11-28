@@ -22,7 +22,7 @@ export default function PaymentsTransactionsPage() {
     const search = searchTerm.toLowerCase();
     return (
       transaction.id.toLowerCase().includes(search) ||
-      transaction.order_id.toLowerCase().includes(search) ||
+      transaction.order_id?.toLowerCase().includes(search) ||
       transaction.charge_id?.toLowerCase().includes(search) ||
       transaction.payment_intent_id?.toLowerCase().includes(search)
     );
@@ -168,7 +168,12 @@ export default function PaymentsTransactionsPage() {
                             {transaction.card_brand && ` (${transaction.card_brand})`}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Orden: {transaction.order_id.substring(0, 8)}... | {formatDate(transaction.created_at)}
+                            {transaction.order_id ? (
+                              <>Orden: {transaction.order_id.substring(0, 8)}... | </>
+                            ) : (
+                              'Sin orden asociada | '
+                            )}
+                            {formatDate(transaction.created_at)}
                           </p>
                           {transaction.charge_id && (
                             <p className="text-xs text-muted-foreground">
@@ -178,11 +183,13 @@ export default function PaymentsTransactionsPage() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Link href={`/orders/${transaction.order_id}`}>
-                          <Button variant="outline" size="sm">
-                            Ver Orden
-                          </Button>
-                        </Link>
+                        {transaction.order_id && (
+                          <Link href={`/orders/${transaction.order_id}`}>
+                            <Button variant="outline" size="sm">
+                              Ver Orden
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}

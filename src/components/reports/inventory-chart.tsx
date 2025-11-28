@@ -24,7 +24,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 export function InventoryChart({ data }: InventoryChartProps) {
   // Agrupar productos por categoría
-  const productsByCategory = data.products.reduce((acc, product) => {
+  const productsByCategory = (data.products || []).reduce((acc, product) => {
     const category = product.category_name || 'Sin categoría';
     if (!acc[category]) {
       acc[category] = { category, count: 0, lowStock: 0 };
@@ -42,15 +42,15 @@ export function InventoryChart({ data }: InventoryChartProps) {
   const stockStatusData = [
     {
       name: 'En Stock',
-      value: data.products.filter((p) => p.stock_quantity > p.min_stock_level).length,
+      value: (data.products || []).filter((p) => p.stock_quantity > p.min_stock_level).length,
     },
     {
       name: 'Stock Bajo',
-      value: data.summary.low_stock_count,
+      value: data.summary?.low_stock_count || 0,
     },
     {
       name: 'Sin Stock',
-      value: data.summary.out_of_stock_count,
+      value: data.summary?.out_of_stock_count || 0,
     },
   ].filter((item) => item.value > 0);
 
