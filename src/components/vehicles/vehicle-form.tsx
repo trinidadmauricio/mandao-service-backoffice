@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from '@/lib/hooks/use-vehicles';
 import { useLogisticsProviders } from '@/lib/hooks/use-logistics-providers';
 import { useDrivers } from '@/lib/hooks/use-drivers';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { USER_ROLE } from '@/lib/constants/roles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -54,6 +56,7 @@ interface VehicleFormProps {
 export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const isEditing = !!vehicleId;
   const { data: vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId || '');
   const { data: logisticsProviders } = useLogisticsProviders();
@@ -62,12 +65,23 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const createVehicle = useCreateVehicle();
   const updateVehicle = useUpdateVehicle();
 
+  // Determinar si el campo "Proveedor Logístico" debe estar oculto
+  // LOGISTICS_PROVIDER y SUPERVISOR no deben ver este campo, ya que pertenecen a un proveedor específico
+  const shouldHideLogisticsProviderField =
+    currentUser &&
+    (currentUser.role === USER_ROLE.LOGISTICS_PROVIDER ||
+      currentUser.role === USER_ROLE.SUPERVISOR);
+
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       status: 'AVAILABLE',
       vehicle_type: 'MOTORCYCLE',
-      logistics_provider_id: '',
+      // Si el usuario es LOGISTICS_PROVIDER o SUPERVISOR, usar su logistics_provider_id automáticamente
+      logistics_provider_id:
+        shouldHideLogisticsProviderField && currentUser?.logistics_provider_id
+          ? currentUser.logistics_provider_id
+          : '',
       driver_id: '',
       license_plate: '',
       brand: '',
@@ -108,6 +122,14 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
       providerIdsWithAvailableDrivers.has(provider.id)
     );
   }, [logisticsProviders, allDrivers]);
+
+  // Establecer automáticamente el logistics_provider_id cuando se crea un nuevo vehículo
+  // y el usuario es LOGISTICS_PROVIDER o SUPERVISOR
+  useEffect(() => {
+    if (!isEditing && shouldHideLogisticsProviderField && currentUser?.logistics_provider_id) {
+      form.setValue('logistics_provider_id', currentUser.logistics_provider_id);
+    }
+  }, [isEditing, shouldHideLogisticsProviderField, currentUser, form]);
 
   // Limpiar driver seleccionado cuando cambia el proveedor
   useEffect(() => {
@@ -393,35 +415,56 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Campo oculto para LOGISTICS_PROVIDER y SUPERVISOR */}
+            {shouldHideLogisticsProviderField && (
               <FormField
                 control={form.control}
                 name="logistics_provider_id"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Proveedor Logístico</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(value || undefined)}
-                      value={field.value || undefined}
-                      disabled={isPending}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sin proveedor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {providersWithDrivers.map((provider) => (
-                          <SelectItem key={provider.id} value={provider.id}>
-                            {provider.company_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                  <FormItem className="hidden">
+                    <FormControl>
+                      <Input type="hidden" {...field} />
+                    </FormControl>
                   </FormItem>
                 )}
               />
+            )}
+
+            <div
+              className={`grid grid-cols-1 ${
+                shouldHideLogisticsProviderField ? 'md:grid-cols-1' : 'md:grid-cols-2'
+              } gap-4`}
+            >
+              {!shouldHideLogisticsProviderField && (
+                <FormField
+                  control={form.control}
+                  name="logistics_provider_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Proveedor Logístico</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(value || undefined)}
+                        value={field.value || undefined}
+                        disabled={isPending}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sin proveedor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {providersWithDrivers.map((provider) => (
+                            <SelectItem key={provider.id} value={provider.id}>
+                              {provider.company_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
