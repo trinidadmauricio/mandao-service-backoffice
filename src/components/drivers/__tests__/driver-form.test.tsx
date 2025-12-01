@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import { DriverForm } from '../driver-form';
 import { useCreateDriver, useUpdateDriver, useDriver } from '@/lib/hooks/use-drivers';
 import { useLogisticsProviders } from '@/lib/hooks/use-logistics-providers';
@@ -54,8 +53,8 @@ describe('DriverForm', () => {
     jest.clearAllMocks();
     
     // Configurar mocks por defecto
-    mockUseCreateDriver.mockReturnValue(defaultMutationReturn as any);
-    mockUseUpdateDriver.mockReturnValue(defaultMutationReturn as any);
+    mockUseCreateDriver.mockReturnValue(defaultMutationReturn as ReturnType<typeof useCreateDriver>);
+    mockUseUpdateDriver.mockReturnValue(defaultMutationReturn as ReturnType<typeof useUpdateDriver>);
     mockUseDriver.mockReturnValue({
       data: undefined,
       isLoading: false,
