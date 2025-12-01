@@ -145,12 +145,8 @@ const navItems: NavItem[] = [
     href: "/logistics-providers",
     icon: Truck,
     requiredPermission: { resource: "logistics-providers", action: "read" },
-    allowedRoles: [
-      "SUPERVISOR",
-      "LOGISTICS_PROVIDER",
-      "SAAS_ADMIN",
-      "SAAS_EDITOR",
-    ],
+    // LOGISTICS_PROVIDER y SUPERVISOR no deben tener acceso a la sección de proveedores
+    allowedRoles: ["SAAS_ADMIN", "SAAS_EDITOR", "OWNER"],
   },
   {
     title: "Configuración",
@@ -179,7 +175,10 @@ export function Sidebar() {
         // Permitir acceso
       }
       // LOGISTICS_PROVIDER y SUPERVISOR no tienen tenant, no deben ver módulos de catálogo
-      else if (role === USER_ROLE.LOGISTICS_PROVIDER || role === USER_ROLE.SUPERVISOR) {
+      else if (
+        role === USER_ROLE.LOGISTICS_PROVIDER ||
+        role === USER_ROLE.SUPERVISOR
+      ) {
         // Si requiere RETAIL, no mostrar (LOGISTICS_PROVIDER no tiene catálogo)
         if (item.requiredTenantType === "RETAIL") {
           return false;
