@@ -66,7 +66,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
   const isEditing = !!driverId;
   const { data: driver, isLoading: isLoadingDriver } = useDriver(driverId || '');
   const { data: logisticsProviders } = useLogisticsProviders();
-  const { data: users } = useUsers();
+  const { data: users } = useUsers({ role: 'DRIVER' });
   const { data: vehicles } = useVehicles();
   const createDriver = useCreateDriver();
   const updateDriver = useUpdateDriver();
@@ -162,7 +162,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
     );
   }
 
-  const isPending = createDriver.isPending || updateDriver.isPending;
+  const isPending = createDriver?.isPending || updateDriver?.isPending || false;
 
   return (
     <Card className="w-full max-w-4xl">
@@ -216,11 +216,17 @@ export function DriverForm({ driverId }: DriverFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Array.isArray(users?.data) && users.data.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.first_name} {user.last_name} ({user.email})
-                          </SelectItem>
-                        ))}
+                        {Array.isArray(users?.data) && users.data.length > 0 ? (
+                          users.data.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.first_name} {user.last_name} ({user.email})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                            No hay usuarios DRIVER disponibles. Crea un usuario con rol DRIVER primero.
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
