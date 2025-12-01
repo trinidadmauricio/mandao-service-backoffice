@@ -1,17 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useCreateVehicle, useUpdateVehicle, useVehicle } from '@/lib/hooks/use-vehicles';
-import { useLogisticsProviders } from '@/lib/hooks/use-logistics-providers';
-import { useDrivers } from '@/lib/hooks/use-drivers';
-import { useAuth } from '@/lib/hooks/use-auth';
-import { USER_ROLE } from '@/lib/constants/roles';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useEffect } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  useCreateVehicle,
+  useUpdateVehicle,
+  useVehicle,
+} from "@/lib/hooks/use-vehicles";
+import { useLogisticsProviders } from "@/lib/hooks/use-logistics-providers";
+import { useDrivers } from "@/lib/hooks/use-drivers";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { USER_ROLE } from "@/lib/constants/roles";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -19,31 +23,52 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 
 const vehicleSchema = z.object({
-  logistics_provider_id: z.string().uuid().optional().or(z.literal('')),
-  driver_id: z.string().uuid().optional().or(z.literal('')),
-  vehicle_type: z.enum(['MOTORCYCLE', 'SEDAN', 'MINI_VAN', 'PANEL', 'TRUCK', 'PICKUP']),
-  license_plate: z.string().min(1, 'La placa es requerida'),
-  brand: z.string().min(1, 'La marca es requerida'),
-  model: z.string().min(1, 'El modelo es requerido'),
-  year: z.number().int().min(1900).max(new Date().getFullYear() + 1),
-  color: z.string().min(1, 'El color es requerido'),
-  insurance_policy: z.string().min(1, 'La póliza de seguro es requerida'),
-  insurance_expires_at: z.string().min(1, 'La fecha de expiración del seguro es requerida'),
-  last_maintenance_at: z.string().optional().or(z.literal('')),
-  status: z.enum(['AVAILABLE', 'IN_SERVICE', 'MAINTENANCE', 'OUT_OF_SERVICE']).default('AVAILABLE'),
+  logistics_provider_id: z.string().uuid().optional().or(z.literal("")),
+  driver_id: z.string().uuid().optional().or(z.literal("")),
+  vehicle_type: z.enum([
+    "MOTORCYCLE",
+    "SEDAN",
+    "MINI_VAN",
+    "PANEL",
+    "TRUCK",
+    "PICKUP",
+  ]),
+  license_plate: z.string().min(1, "La placa es requerida"),
+  brand: z.string().min(1, "La marca es requerida"),
+  model: z.string().min(1, "El modelo es requerido"),
+  year: z
+    .number()
+    .int()
+    .min(1900)
+    .max(new Date().getFullYear() + 1),
+  color: z.string().min(1, "El color es requerido"),
+  insurance_policy: z.string().min(1, "La póliza de seguro es requerida"),
+  insurance_expires_at: z
+    .string()
+    .min(1, "La fecha de expiración del seguro es requerida"),
+  last_maintenance_at: z.string().optional().or(z.literal("")),
+  status: z
+    .enum(["AVAILABLE", "IN_SERVICE", "MAINTENANCE", "OUT_OF_SERVICE"])
+    .default("AVAILABLE"),
   specifications: z.record(z.unknown()).optional(),
 });
 
@@ -58,10 +83,12 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const isEditing = !!vehicleId;
-  const { data: vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId || '');
+  const { data: vehicle, isLoading: isLoadingVehicle } = useVehicle(
+    vehicleId || ""
+  );
   const { data: logisticsProviders } = useLogisticsProviders();
   // Cargar todos los drivers disponibles para determinar qué proveedores tienen drivers disponibles
-  const { data: allDrivers } = useDrivers({ availability_status: 'AVAILABLE' });
+  const { data: allDrivers } = useDrivers({ availability_status: "AVAILABLE" });
   const createVehicle = useCreateVehicle();
   const updateVehicle = useUpdateVehicle();
 
@@ -75,34 +102,39 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      status: 'AVAILABLE',
-      vehicle_type: 'MOTORCYCLE',
+      status: "AVAILABLE",
+      vehicle_type: "MOTORCYCLE",
       // Si el usuario es LOGISTICS_PROVIDER o SUPERVISOR, usar su logistics_provider_id automáticamente
       logistics_provider_id:
         shouldHideLogisticsProviderField && currentUser?.logistics_provider_id
           ? currentUser.logistics_provider_id
-          : '',
-      driver_id: '',
-      license_plate: '',
-      brand: '',
-      model: '',
+          : "",
+      driver_id: "",
+      license_plate: "",
+      brand: "",
+      model: "",
       year: new Date().getFullYear(),
-      color: '',
-      insurance_policy: '',
-      insurance_expires_at: '',
-      last_maintenance_at: '',
+      color: "",
+      insurance_policy: "",
+      insurance_expires_at: "",
+      last_maintenance_at: "",
       specifications: {},
     },
   });
 
   // Obtener el proveedor seleccionado del formulario
-  const selectedProviderId = form.watch('logistics_provider_id');
-  
+  const selectedProviderId = form.watch("logistics_provider_id");
+
   // Cargar drivers filtrados por proveedor cuando se selecciona uno (solo disponibles)
   const { data: filteredDrivers } = useDrivers(
-    selectedProviderId ? { logistics_provider_id: selectedProviderId, availability_status: 'AVAILABLE' } : undefined
+    selectedProviderId
+      ? {
+          logistics_provider_id: selectedProviderId,
+          availability_status: "AVAILABLE",
+        }
+      : undefined
   );
-  
+
   // Usar drivers filtrados si hay proveedor seleccionado, sino todos
   const drivers = selectedProviderId ? filteredDrivers : allDrivers;
 
@@ -110,15 +142,15 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   // El backend ya filtra por availability_status='AVAILABLE', así que todos los drivers aquí son disponibles
   const providersWithDrivers = React.useMemo(() => {
     if (!logisticsProviders || !allDrivers?.data) return [];
-    
+
     // Obtener IDs de proveedores que tienen drivers disponibles
     const providerIdsWithAvailableDrivers = new Set(
       allDrivers.data
         .map((driver) => driver.logistics_provider_id)
         .filter((id): id is string => !!id)
     );
-    
-    return logisticsProviders.filter((provider) => 
+
+    return logisticsProviders.filter((provider) =>
       providerIdsWithAvailableDrivers.has(provider.id)
     );
   }, [logisticsProviders, allDrivers]);
@@ -126,8 +158,12 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   // Establecer automáticamente el logistics_provider_id cuando se crea un nuevo vehículo
   // y el usuario es LOGISTICS_PROVIDER o SUPERVISOR
   useEffect(() => {
-    if (!isEditing && shouldHideLogisticsProviderField && currentUser?.logistics_provider_id) {
-      form.setValue('logistics_provider_id', currentUser.logistics_provider_id);
+    if (
+      !isEditing &&
+      shouldHideLogisticsProviderField &&
+      currentUser?.logistics_provider_id
+    ) {
+      form.setValue("logistics_provider_id", currentUser.logistics_provider_id);
     }
   }, [isEditing, shouldHideLogisticsProviderField, currentUser, form]);
 
@@ -135,11 +171,16 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   useEffect(() => {
     if (selectedProviderId) {
       // Verificar si el driver actual pertenece al proveedor seleccionado
-      const currentDriverId = form.getValues('driver_id');
+      const currentDriverId = form.getValues("driver_id");
       if (currentDriverId) {
-        const currentDriver = allDrivers?.data?.find((d) => d.id === currentDriverId);
-        if (currentDriver && currentDriver.logistics_provider_id !== selectedProviderId) {
-          form.setValue('driver_id', '');
+        const currentDriver = allDrivers?.data?.find(
+          (d) => d.id === currentDriverId
+        );
+        if (
+          currentDriver &&
+          currentDriver.logistics_provider_id !== selectedProviderId
+        ) {
+          form.setValue("driver_id", "");
         }
       }
     }
@@ -148,8 +189,8 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   useEffect(() => {
     if (vehicle && isEditing) {
       form.reset({
-        logistics_provider_id: vehicle.logistics_provider_id || '',
-        driver_id: vehicle.driver_id || '',
+        logistics_provider_id: vehicle.logistics_provider_id || "",
+        driver_id: vehicle.driver_id || "",
         vehicle_type: vehicle.vehicle_type,
         license_plate: vehicle.license_plate,
         brand: vehicle.brand,
@@ -157,8 +198,8 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
         year: vehicle.year,
         color: vehicle.color,
         insurance_policy: vehicle.insurance_policy,
-        insurance_expires_at: vehicle.insurance_expires_at.split('T')[0],
-        last_maintenance_at: vehicle.last_maintenance_at?.split('T')[0] || '',
+        insurance_expires_at: vehicle.insurance_expires_at.split("T")[0],
+        last_maintenance_at: vehicle.last_maintenance_at?.split("T")[0] || "",
         status: vehicle.status,
         specifications: vehicle.specifications || {},
       });
@@ -181,22 +222,25 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
           data: submitData,
         });
         toast({
-          title: 'Vehículo actualizado',
-          description: 'El vehículo ha sido actualizado exitosamente.',
+          title: "Vehículo actualizado",
+          description: "El vehículo ha sido actualizado exitosamente.",
         });
       } else {
         await createVehicle.mutateAsync(submitData);
         toast({
-          title: 'Vehículo creado',
-          description: 'El vehículo ha sido creado exitosamente.',
+          title: "Vehículo creado",
+          description: "El vehículo ha sido creado exitosamente.",
         });
       }
-      router.push('/vehicles');
+      router.push("/vehicles");
     } catch (error: unknown) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Hubo un error al guardar el vehículo.',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Hubo un error al guardar el vehículo.",
+        variant: "destructive",
       });
     }
   };
@@ -215,22 +259,24 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const isPending = createVehicle.isPending || updateVehicle.isPending;
 
   const vehicleTypeLabels: Record<string, string> = {
-    MOTORCYCLE: 'Motocicleta',
-    SEDAN: 'Sedán',
-    MINI_VAN: 'Mini Van',
-    PANEL: 'Panel',
-    TRUCK: 'Camión',
-    PICKUP: 'Pickup',
+    MOTORCYCLE: "Motocicleta",
+    SEDAN: "Sedán",
+    MINI_VAN: "Mini Van",
+    PANEL: "Panel",
+    TRUCK: "Camión",
+    PICKUP: "Pickup",
   };
 
   return (
     <Card className="w-full max-w-4xl">
       <CardHeader>
-        <CardTitle>{isEditing ? 'Editar Vehículo' : 'Nuevo Vehículo'}</CardTitle>
+        <CardTitle>
+          {isEditing ? "Editar Vehículo" : "Nuevo Vehículo"}
+        </CardTitle>
         <CardDescription>
           {isEditing
-            ? 'Actualiza la información del vehículo'
-            : 'Crea un nuevo vehículo en el sistema'}
+            ? "Actualiza la información del vehículo"
+            : "Crea un nuevo vehículo en el sistema"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -243,18 +289,24 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Vehículo *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isPending}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un tipo" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(vehicleTypeLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
+                        {Object.entries(vehicleTypeLabels).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          )
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -317,7 +369,9 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                         type="number"
                         disabled={isPending}
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value) || 0)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -347,7 +401,11 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estado *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isPending}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un estado" />
@@ -356,8 +414,12 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                       <SelectContent>
                         <SelectItem value="AVAILABLE">Disponible</SelectItem>
                         <SelectItem value="IN_SERVICE">En Servicio</SelectItem>
-                        <SelectItem value="MAINTENANCE">En Mantenimiento</SelectItem>
-                        <SelectItem value="OUT_OF_SERVICE">Fuera de Servicio</SelectItem>
+                        <SelectItem value="MAINTENANCE">
+                          En Mantenimiento
+                        </SelectItem>
+                        <SelectItem value="OUT_OF_SERVICE">
+                          Fuera de Servicio
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -407,7 +469,7 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                       type="date"
                       disabled={isPending}
                       {...field}
-                      value={field.value || ''}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -432,7 +494,9 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
 
             <div
               className={`grid grid-cols-1 ${
-                shouldHideLogisticsProviderField ? 'md:grid-cols-1' : 'md:grid-cols-2'
+                shouldHideLogisticsProviderField
+                  ? "md:grid-cols-1"
+                  : "md:grid-cols-2"
               } gap-4`}
             >
               {!shouldHideLogisticsProviderField && (
@@ -443,7 +507,9 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                     <FormItem>
                       <FormLabel>Proveedor Logístico</FormLabel>
                       <Select
-                        onValueChange={(value) => field.onChange(value || undefined)}
+                        onValueChange={(value) =>
+                          field.onChange(value || undefined)
+                        }
                         value={field.value || undefined}
                         disabled={isPending}
                       >
@@ -473,29 +539,36 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                   <FormItem>
                     <FormLabel>Driver Asignado</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(value || undefined)}
+                      onValueChange={(value) =>
+                        field.onChange(value || undefined)
+                      }
                       value={field.value || undefined}
-                      disabled={isPending || !selectedProviderId || !drivers?.data?.length}
+                      disabled={
+                        isPending ||
+                        !selectedProviderId ||
+                        !drivers?.data?.length
+                      }
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue 
+                          <SelectValue
                             placeholder={
-                              !selectedProviderId 
-                                ? 'Selecciona un proveedor primero' 
-                                : !drivers?.data?.length 
-                                ? 'No hay drivers disponibles' 
-                                : 'Sin driver'
-                            } 
+                              !selectedProviderId
+                                ? "Selecciona un proveedor primero"
+                                : !drivers?.data?.length
+                                ? "No hay drivers disponibles"
+                                : "Sin driver"
+                            }
                           />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Array.isArray(drivers?.data) && drivers.data.map((driver) => (
-                          <SelectItem key={driver.id} value={driver.id}>
-                            {driver.user?.first_name} {driver.user?.last_name}
-                          </SelectItem>
-                        ))}
+                        {Array.isArray(drivers?.data) &&
+                          drivers.data.map((driver) => (
+                            <SelectItem key={driver.id} value={driver.id}>
+                              {driver.user?.first_name} {driver.user?.last_name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -514,7 +587,11 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
+                {isPending
+                  ? "Guardando..."
+                  : isEditing
+                  ? "Actualizar"
+                  : "Crear"}
               </Button>
             </div>
           </form>
@@ -523,4 +600,3 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
     </Card>
   );
 }
-
