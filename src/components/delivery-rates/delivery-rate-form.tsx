@@ -6,6 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateDeliveryRate, useUpdateDeliveryRate, useDeliveryRate } from '@/lib/hooks/use-delivery-rates';
 import { useDeliveryZones } from '@/lib/hooks/use-delivery-zones';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useTenants } from '@/lib/hooks/use-tenants';
+import { USER_ROLE } from '@/lib/constants/roles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -28,19 +31,37 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, X } from 'lucide-react';
 
-const deliveryRateSchema = z.object({
-  zone_id: z.string().uuid().optional().or(z.literal('')),
-  vehicle_type: z.enum(['MOTORCYCLE', 'SEDAN', 'MINI_VAN', 'PANEL', 'TRUCK', 'PICKUP']),
-  distance_km_min: z.number().min(0, 'La distancia mínima debe ser mayor o igual a 0'),
-  distance_km_max: z.number().min(0, 'La distancia máxima debe ser mayor o igual a 0'),
-  base_price: z.number().min(0, 'El precio base debe ser mayor o igual a 0'),
-  price_per_km: z.number().min(0, 'El precio por km debe ser mayor o igual a 0'),
-  currency: z.string().length(3, 'El código de moneda debe tener 3 caracteres').default('USD'),
-  priority_multiplier: z.record(z.number()).default({}),
-}).refine((data) => data.distance_km_max >= data.distance_km_min, {
-  message: 'La distancia máxima debe ser mayor o igual a la mínima',
-  path: ['distance_km_max'],
-});
+// Schema dinámico según el rol del usuario
+const createDeliveryRateSchema = (isLogisticsProviderRole: boolean) => {
+  const baseSchema = {
+    zone_id: z.string().uuid().optional().or(z.literal('')),
+    vehicle_type: z.enum(['MOTORCYCLE', 'SEDAN', 'MINI_VAN', 'PANEL', 'TRUCK', 'PICKUP']),
+    distance_km_min: z.number().min(0, 'La distancia mínima debe ser mayor o igual a 0'),
+    distance_km_max: z.number().min(0, 'La distancia máxima debe ser mayor o igual a 0'),
+    base_price: z.number().min(0, 'El precio base debe ser mayor o igual a 0'),
+    price_per_km: z.number().min(0, 'El precio por km debe ser mayor o igual a 0'),
+    currency: z.string().length(3, 'El código de moneda debe tener 3 caracteres').default('USD'),
+    priority_multiplier: z.record(z.number()).default({}),
+  };
+
+  if (isLogisticsProviderRole) {
+    return z.object({
+      ...baseSchema,
+      logistics_provider_id: z.string().uuid('El proveedor logístico es requerido'),
+    }).refine((data) => data.distance_km_max >= data.distance_km_min, {
+      message: 'La distancia máxima debe ser mayor o igual a la mínima',
+      path: ['distance_km_max'],
+    });
+  } else {
+    return z.object({
+      ...baseSchema,
+      tenant_id: z.string().uuid('El tenant es requerido'),
+    }).refine((data) => data.distance_km_max >= data.distance_km_min, {
+      message: 'La distancia máxima debe ser mayor o igual a la mínima',
+      path: ['distance_km_max'],
+    });
+  }
+};
 
 type DeliveryRateFormData = z.infer<typeof deliveryRateSchema>;
 
@@ -51,12 +72,28 @@ interface DeliveryRateFormProps {
 export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
+  const { data: tenants } = useTenants();
   const isEditing = !!rateId;
   const { data: rate, isLoading: isLoadingRate } = useDeliveryRate(rateId || '');
   const { data: zones } = useDeliveryZones();
   const createRate = useCreateDeliveryRate();
   const updateRate = useUpdateDeliveryRate();
   const [priorityEntries, setPriorityEntries] = useState<Array<{ key: string; value: number }>>([]);
+
+  // Determinar el tipo de rol del usuario
+  const isLogisticsProviderRole =
+    currentUser &&
+    (currentUser.role === USER_ROLE.LOGISTICS_PROVIDER || currentUser.role === USER_ROLE.SUPERVISOR);
+  const isTenantRole =
+    currentUser &&
+    (currentUser.role === USER_ROLE.SAAS_ADMIN ||
+      currentUser.role === USER_ROLE.SAAS_EDITOR ||
+      currentUser.role === USER_ROLE.OWNER);
+
+  // Crear schema dinámico según el rol
+  const deliveryRateSchema = createDeliveryRateSchema(!!isLogisticsProviderRole);
+  type DeliveryRateFormData = z.infer<typeof deliveryRateSchema>;
 
   const form = useForm<DeliveryRateFormData>({
     resolver: zodResolver(deliveryRateSchema),
@@ -69,8 +106,27 @@ export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
       base_price: 0,
       price_per_km: 0,
       priority_multiplier: {},
+      // Si es LOGISTICS_PROVIDER/SUPERVISOR, auto-poblar logistics_provider_id
+      ...(isLogisticsProviderRole && currentUser?.logistics_provider_id
+        ? { logistics_provider_id: currentUser.logistics_provider_id }
+        : {}),
+      // Si es OWNER, auto-poblar tenant_id
+      ...(currentUser?.role === USER_ROLE.OWNER && currentUser?.tenant_id
+        ? { tenant_id: currentUser.tenant_id }
+        : {}),
     },
   });
+
+  // Establecer automáticamente el campo apropiado cuando se crea un nuevo recurso
+  useEffect(() => {
+    if (!isEditing) {
+      if (isLogisticsProviderRole && currentUser?.logistics_provider_id) {
+        form.setValue('logistics_provider_id', currentUser.logistics_provider_id);
+      } else if (currentUser?.role === USER_ROLE.OWNER && currentUser?.tenant_id) {
+        form.setValue('tenant_id', currentUser.tenant_id);
+      }
+    }
+  }, [isEditing, isLogisticsProviderRole, currentUser, form]);
 
   useEffect(() => {
     if (rate && isEditing) {
@@ -83,6 +139,11 @@ export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
         price_per_km: rate.price_per_km,
         currency: rate.currency,
         priority_multiplier: rate.priority_multiplier || {},
+        // Incluir el campo apropiado según el tipo de tarifa
+        ...(rate.logistics_provider_id
+          ? { logistics_provider_id: rate.logistics_provider_id }
+          : {}),
+        ...(rate.tenant_id ? { tenant_id: rate.tenant_id } : {}),
       });
 
       // Convert priority_multiplier object to array for editing
@@ -185,6 +246,53 @@ export function DeliveryRateForm({ rateId }: DeliveryRateFormProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Campo oculto para LOGISTICS_PROVIDER y SUPERVISOR */}
+            {isLogisticsProviderRole && (
+              <FormField
+                control={form.control}
+                name="logistics_provider_id"
+                render={({ field }) => (
+                  <FormItem className="hidden">
+                    <FormControl>
+                      <Input type="hidden" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Campo tenant_id para SAAS_ADMIN, SAAS_EDITOR y OWNER */}
+            {isTenantRole && (
+              <FormField
+                control={form.control}
+                name="tenant_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tenant *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isPending || currentUser?.role === USER_ROLE.OWNER}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un tenant" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {tenants?.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id}>
+                            {tenant.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
