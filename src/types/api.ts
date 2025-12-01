@@ -216,7 +216,8 @@ export interface Branch {
 
 export interface DeliveryZone {
   id: string;
-  tenant_id: string;
+  tenant_id: string | null;
+  logistics_provider_id: string | null;
   name: string;
   boundary: string; // WKT format
   base_rate: number;
@@ -230,7 +231,8 @@ export interface DeliveryZone {
 
 export interface DeliveryRate {
   id: string;
-  tenant_id: string;
+  tenant_id: string | null;
+  logistics_provider_id: string | null;
   zone_id?: string;
   vehicle_type: 'MOTORCYCLE' | 'SEDAN' | 'MINI_VAN' | 'PANEL' | 'TRUCK' | 'PICKUP';
   distance_km_min: number;
