@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,32 +37,69 @@ import { RefreshCw, Copy, Check, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { USER_ROLE } from "@/lib/constants/roles";
 
-const userSchema = z
-  .object({
-    email: z.string().email("Email inválido"),
-    password: z
-      .string()
-      .min(8, "La contraseña debe tener al menos 8 caracteres")
-      .optional(),
-    first_name: z.string().min(1, "El nombre es requerido"),
-    last_name: z.string().min(1, "El apellido es requerido"),
-    phone: z.string().optional(),
-    role: z.enum([
-      USER_ROLE.SAAS_ADMIN,
-      USER_ROLE.SAAS_EDITOR,
-      USER_ROLE.OWNER,
-      USER_ROLE.SUPERVISOR,
-      USER_ROLE.MERCHANT_USER,
-      USER_ROLE.LOGISTICS_PROVIDER,
-      USER_ROLE.DRIVER,
-    ]),
-    status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).default("ACTIVE"),
-  })
-  .refine(() => {
-    // Password es requerido solo al crear (no al editar)
-    // Esta validación se manejará en el componente
-    return true;
-  });
+/**
+ * Mapeo de roles a sus nombres legibles en español
+ */
+const ROLE_LABELS: Record<string, string> = {
+  [USER_ROLE.SAAS_ADMIN]: "Administrador SAAS",
+  [USER_ROLE.SAAS_EDITOR]: "Editor SAAS",
+  [USER_ROLE.OWNER]: "Propietario",
+  [USER_ROLE.MERCHANT_USER]: "Usuario del Comercio",
+  [USER_ROLE.LOGISTICS_PROVIDER]: "Proveedor Logístico",
+  [USER_ROLE.SUPERVISOR]: "Supervisor",
+  [USER_ROLE.DRIVER]: "Conductor",
+};
+
+/**
+ * Roles que cada tipo de usuario puede CREAR
+ */
+const CREATABLE_ROLES_BY_USER: Record<string, string[]> = {
+  [USER_ROLE.SAAS_ADMIN]: [
+    USER_ROLE.SAAS_ADMIN,
+    USER_ROLE.SAAS_EDITOR,
+    USER_ROLE.OWNER,
+    USER_ROLE.MERCHANT_USER,
+    USER_ROLE.LOGISTICS_PROVIDER,
+    USER_ROLE.SUPERVISOR,
+    USER_ROLE.DRIVER,
+  ],
+  [USER_ROLE.SAAS_EDITOR]: [
+    USER_ROLE.SAAS_ADMIN,
+    USER_ROLE.SAAS_EDITOR,
+    USER_ROLE.OWNER,
+    USER_ROLE.MERCHANT_USER,
+    USER_ROLE.LOGISTICS_PROVIDER,
+    USER_ROLE.SUPERVISOR,
+    USER_ROLE.DRIVER,
+  ],
+  [USER_ROLE.OWNER]: [USER_ROLE.MERCHANT_USER],
+  [USER_ROLE.LOGISTICS_PROVIDER]: [USER_ROLE.SUPERVISOR, USER_ROLE.DRIVER],
+  [USER_ROLE.SUPERVISOR]: [USER_ROLE.DRIVER],
+};
+
+const userSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.length === 0 || val.length >= 8,
+      "La contraseña debe tener al menos 8 caracteres"
+    ),
+  first_name: z.string().min(1, "El nombre es requerido"),
+  last_name: z.string().min(1, "El apellido es requerido"),
+  phone: z.string().optional(),
+  role: z.enum([
+    USER_ROLE.SAAS_ADMIN,
+    USER_ROLE.SAAS_EDITOR,
+    USER_ROLE.OWNER,
+    USER_ROLE.SUPERVISOR,
+    USER_ROLE.MERCHANT_USER,
+    USER_ROLE.LOGISTICS_PROVIDER,
+    USER_ROLE.DRIVER,
+  ]),
+  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).default("ACTIVE"),
+});
 
 type UserFormData = z.infer<typeof userSchema>;
 
@@ -113,6 +150,14 @@ export function UserForm({ userId }: UserFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
 
+  // Calcular el rol del usuario que se está editando (antes del form)
+  const editingUserRole = useMemo(() => {
+    if (!user || !isEditing) return null;
+    // Filtrar CUSTOMER ya que no se puede editar desde el backoffice
+    if (user.role === USER_ROLE.CUSTOMER) return USER_ROLE.MERCHANT_USER;
+    return user.role;
+  }, [user, isEditing]);
+
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
@@ -126,12 +171,26 @@ export function UserForm({ userId }: UserFormProps) {
     },
   });
 
+  // Calcular qué roles mostrar en el Select
+  const availableRoles = useMemo(() => {
+    const currentUserRole = currentUser?.role;
+
+    // Si estamos editando, solo mostrar el rol actual del usuario (no se puede cambiar)
+    if (isEditing && editingUserRole) {
+      return [editingUserRole];
+    }
+
+    // Al crear, mostrar los roles que puede crear el usuario actual
+    if (currentUserRole && CREATABLE_ROLES_BY_USER[currentUserRole]) {
+      return CREATABLE_ROLES_BY_USER[currentUserRole];
+    }
+
+    return [];
+  }, [currentUser?.role, isEditing, editingUserRole]);
+
   // Cargar datos del usuario si está editando
   useEffect(() => {
     if (user && isEditing) {
-      // Filtrar CUSTOMER ya que no se puede editar desde el backoffice
-      const validRole =
-        user.role === USER_ROLE.CUSTOMER ? USER_ROLE.MERCHANT_USER : user.role;
       // Asegurar que el rol sea uno de los permitidos en el schema
       const allowedRoles = [
         USER_ROLE.SAAS_ADMIN,
@@ -142,15 +201,14 @@ export function UserForm({ userId }: UserFormProps) {
         USER_ROLE.LOGISTICS_PROVIDER,
         USER_ROLE.DRIVER,
       ] as const;
+
       const roleForForm = allowedRoles.includes(
-        validRole as (typeof allowedRoles)[number]
+        editingUserRole as (typeof allowedRoles)[number]
       )
-        ? (validRole as (typeof allowedRoles)[number])
+        ? (editingUserRole as (typeof allowedRoles)[number])
         : USER_ROLE.MERCHANT_USER;
 
       // Usar reset para establecer todos los valores de una vez
-      // Esto asegura que el formulario se actualice correctamente
-      // shouldValidate: false para no validar al cargar
       form.reset(
         {
           email: user.email,
@@ -167,7 +225,7 @@ export function UserForm({ userId }: UserFormProps) {
         }
       );
     }
-  }, [user, isEditing, form]);
+  }, [user, isEditing, editingUserRole, form]);
 
   const onSubmit = async (data: UserFormData) => {
     try {
@@ -550,178 +608,50 @@ export function UserForm({ userId }: UserFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Rol *</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ""}
-                      disabled={isPending || isEditing}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un rol" />
-                        </SelectTrigger>
-                      </FormControl>
-                      {isEditing && (
+                    {/* Al editar, mostrar el rol como texto de solo lectura */}
+                    {isEditing ? (
+                      <>
+                        <FormControl>
+                          <Input
+                            value={
+                              ROLE_LABELS[field.value] || field.value || ""
+                            }
+                            disabled
+                            readOnly
+                            className="bg-muted"
+                          />
+                        </FormControl>
                         <FormDescription>
                           El rol no se puede modificar al editar un usuario
                         </FormDescription>
-                      )}
-                      <SelectContent>
-                        {/* Determinar qué roles están permitidos según el usuario actual */}
-                        {(() => {
-                          const allowedRolesForCurrentUser: string[] = [];
+                      </>
+                    ) : (
+                      /* Al crear, mostrar el Select con los roles disponibles */
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isPending}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un rol" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableRoles.map((role) => (
+                            <SelectItem key={role} value={role}>
+                              {ROLE_LABELS[role] || role}
+                            </SelectItem>
+                          ))}
 
-                          if (
-                            currentUser?.role === USER_ROLE.SAAS_ADMIN ||
-                            currentUser?.role === USER_ROLE.SAAS_EDITOR
-                          ) {
-                            allowedRolesForCurrentUser.push(
-                              USER_ROLE.SAAS_ADMIN,
-                              USER_ROLE.SAAS_EDITOR,
-                              USER_ROLE.OWNER,
-                              USER_ROLE.MERCHANT_USER,
-                              USER_ROLE.LOGISTICS_PROVIDER,
-                              USER_ROLE.DRIVER
-                            );
-                          } else if (currentUser?.role === USER_ROLE.OWNER) {
-                            allowedRolesForCurrentUser.push(
-                              USER_ROLE.MERCHANT_USER
-                            );
-                          } else if (
-                            currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER
-                          ) {
-                            allowedRolesForCurrentUser.push(
-                              USER_ROLE.SUPERVISOR,
-                              USER_ROLE.DRIVER
-                            );
-                          } else if (
-                            currentUser?.role === USER_ROLE.SUPERVISOR
-                          ) {
-                            allowedRolesForCurrentUser.push(USER_ROLE.DRIVER);
-                          }
-
-                          // Obtener el valor actual del formulario para asegurar que el SelectItem esté presente
-                          const currentFormRole = field.value;
-
-                          return (
-                            <>
-                              {/* Al editar, SIEMPRE mostrar el rol del usuario editado primero para que SelectValue lo encuentre */}
-                              {/* Usar el valor actual del formulario para asegurar coincidencia exacta */}
-                              {/* Esto es crítico: el SelectItem debe estar presente cuando el SelectValue se renderiza */}
-                              {isEditing && currentFormRole && (
-                                <SelectItem key={`current-role-${currentFormRole}`} value={currentFormRole}>
-                                  {currentFormRole === USER_ROLE.SAAS_ADMIN &&
-                                    "Administrador SAAS"}
-                                  {currentFormRole === USER_ROLE.SAAS_EDITOR &&
-                                    "Editor SAAS"}
-                                  {currentFormRole === USER_ROLE.OWNER &&
-                                    "Propietario"}
-                                  {currentFormRole === USER_ROLE.MERCHANT_USER &&
-                                    "Usuario del Comercio"}
-                                  {currentFormRole === USER_ROLE.LOGISTICS_PROVIDER &&
-                                    "Proveedor Logístico"}
-                                  {currentFormRole === USER_ROLE.SUPERVISOR &&
-                                    "Supervisor"}
-                                  {currentFormRole === USER_ROLE.DRIVER && "Conductor"}
-                                </SelectItem>
-                              )}
-
-                              {/* Roles visibles para SAAS_ADMIN y SAAS_EDITOR */}
-                              {(currentUser?.role === USER_ROLE.SAAS_ADMIN ||
-                                currentUser?.role ===
-                                  USER_ROLE.SAAS_EDITOR) && (
-                                <>
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.SAAS_ADMIN) && (
-                                    <SelectItem value={USER_ROLE.SAAS_ADMIN}>
-                                      Administrador SAAS
-                                    </SelectItem>
-                                  )}
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.SAAS_EDITOR) && (
-                                    <SelectItem value={USER_ROLE.SAAS_EDITOR}>
-                                      Editor SAAS
-                                    </SelectItem>
-                                  )}
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.OWNER) && (
-                                    <SelectItem value={USER_ROLE.OWNER}>
-                                      Propietario
-                                    </SelectItem>
-                                  )}
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.MERCHANT_USER) && (
-                                    <SelectItem value={USER_ROLE.MERCHANT_USER}>
-                                      Usuario del Comercio
-                                    </SelectItem>
-                                  )}
-                                  {(!isEditing ||
-                                    currentFormRole !==
-                                      USER_ROLE.LOGISTICS_PROVIDER) && (
-                                    <SelectItem
-                                      value={USER_ROLE.LOGISTICS_PROVIDER}
-                                    >
-                                      Proveedor Logístico
-                                    </SelectItem>
-                                  )}
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.DRIVER) && (
-                                    <SelectItem value={USER_ROLE.DRIVER}>
-                                      Conductor
-                                    </SelectItem>
-                                  )}
-                                </>
-                              )}
-
-                              {/* Roles visibles para OWNER */}
-                              {currentUser?.role === USER_ROLE.OWNER && (
-                                <>
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.MERCHANT_USER) && (
-                                    <SelectItem value={USER_ROLE.MERCHANT_USER}>
-                                      Usuario del Comercio
-                                    </SelectItem>
-                                  )}
-                                </>
-                              )}
-
-                              {/* Roles visibles para LOGISTICS_PROVIDER */}
-                              {currentUser?.role ===
-                                USER_ROLE.LOGISTICS_PROVIDER && (
-                                <>
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.SUPERVISOR) && (
-                                    <SelectItem value={USER_ROLE.SUPERVISOR}>
-                                      Supervisor
-                                    </SelectItem>
-                                  )}
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.DRIVER) && (
-                                    <SelectItem value={USER_ROLE.DRIVER}>
-                                      Conductor
-                                    </SelectItem>
-                                  )}
-                                </>
-                              )}
-
-                              {/* Roles visibles para SUPERVISOR */}
-                              {currentUser?.role === USER_ROLE.SUPERVISOR && (
-                                <>
-                                  {(!isEditing ||
-                                    currentFormRole !== USER_ROLE.DRIVER) && (
-                                    <SelectItem value={USER_ROLE.DRIVER}>
-                                      Conductor
-                                    </SelectItem>
-                                  )}
-                                </>
-                              )}
-                            </>
-                          );
-                        })()}
-
-                        {/* Otros roles no pueden crear usuarios */}
-                        {/* CUSTOMER nunca se puede crear desde el backoffice */}
-                      </SelectContent>
-                    </Select>
+                          {availableRoles.length === 0 && (
+                            <SelectItem value="__no_permission__" disabled>
+                              No tienes permisos para crear usuarios
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
