@@ -147,18 +147,15 @@ export function UserForm({ userId }: UserFormProps) {
       )
         ? (validRole as (typeof allowedRoles)[number])
         : USER_ROLE.MERCHANT_USER;
-      form.reset({
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        phone: user.phone || "",
-        role: roleForForm,
-        status:
-          (user.status as "ACTIVE" | "INACTIVE" | "SUSPENDED") || "ACTIVE",
-        password: "", // No cargar password al editar
-      }, {
-        keepDefaultValues: false,
-      });
+      
+      // Usar setValue en lugar de reset para actualizar solo los campos necesarios
+      form.setValue("email", user.email);
+      form.setValue("first_name", user.first_name);
+      form.setValue("last_name", user.last_name);
+      form.setValue("phone", user.phone || "");
+      form.setValue("role", roleForForm);
+      form.setValue("status", (user.status as "ACTIVE" | "INACTIVE" | "SUSPENDED") || "ACTIVE");
+      form.setValue("password", "");
     }
   }, [user, isEditing, form]);
 
@@ -592,61 +589,75 @@ export function UserForm({ userId }: UserFormProps) {
                             allowedRolesForCurrentUser.push(USER_ROLE.DRIVER);
                           }
 
+                          // Obtener el rol que está en el formulario (puede ser diferente de user.role si era CUSTOMER)
+                          const formRole = isEditing && user ? 
+                            (user.role === USER_ROLE.CUSTOMER ? USER_ROLE.MERCHANT_USER : user.role) : 
+                            null;
+
                           return (
                             <>
                               {/* Al editar, SIEMPRE mostrar el rol del usuario editado primero para que SelectValue lo encuentre */}
-                              {isEditing && user?.role && user.role !== USER_ROLE.CUSTOMER && (
-                                <SelectItem value={user.role}>
-                                  {user.role === USER_ROLE.SAAS_ADMIN &&
-                                    "Administrador SAAS"}
-                                  {user.role === USER_ROLE.SAAS_EDITOR &&
-                                    "Editor SAAS"}
-                                  {user.role === USER_ROLE.OWNER &&
-                                    "Propietario"}
-                                  {user.role === USER_ROLE.MERCHANT_USER &&
-                                    "Usuario del Comercio"}
-                                  {user.role === USER_ROLE.LOGISTICS_PROVIDER &&
-                                    "Proveedor Logístico"}
-                                  {user.role === USER_ROLE.SUPERVISOR &&
-                                    "Supervisor"}
-                                  {user.role === USER_ROLE.DRIVER &&
-                                    "Conductor"}
-                                </SelectItem>
-                              )}
+                              {/* Usar el mismo valor que se setea en el formulario */}
+                              {isEditing && formRole && (
+                                  <SelectItem value={formRole}>
+                                    {formRole === USER_ROLE.SAAS_ADMIN &&
+                                      "Administrador SAAS"}
+                                    {formRole === USER_ROLE.SAAS_EDITOR &&
+                                      "Editor SAAS"}
+                                    {formRole === USER_ROLE.OWNER &&
+                                      "Propietario"}
+                                    {formRole === USER_ROLE.MERCHANT_USER &&
+                                      "Usuario del Comercio"}
+                                    {formRole ===
+                                      USER_ROLE.LOGISTICS_PROVIDER &&
+                                      "Proveedor Logístico"}
+                                    {formRole === USER_ROLE.SUPERVISOR &&
+                                      "Supervisor"}
+                                    {formRole === USER_ROLE.DRIVER &&
+                                      "Conductor"}
+                                  </SelectItem>
+                                )}
 
                               {/* Roles visibles para SAAS_ADMIN y SAAS_EDITOR */}
                               {(currentUser?.role === USER_ROLE.SAAS_ADMIN ||
                                 currentUser?.role ===
                                   USER_ROLE.SAAS_EDITOR) && (
                                 <>
-                                  {(!isEditing || user?.role !== USER_ROLE.SAAS_ADMIN) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.SAAS_ADMIN) && (
                                     <SelectItem value={USER_ROLE.SAAS_ADMIN}>
                                       Administrador SAAS
                                     </SelectItem>
                                   )}
-                                  {(!isEditing || user?.role !== USER_ROLE.SAAS_EDITOR) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.SAAS_EDITOR) && (
                                     <SelectItem value={USER_ROLE.SAAS_EDITOR}>
                                       Editor SAAS
                                     </SelectItem>
                                   )}
-                                  {(!isEditing || user?.role !== USER_ROLE.OWNER) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.OWNER) && (
                                     <SelectItem value={USER_ROLE.OWNER}>
                                       Propietario
                                     </SelectItem>
                                   )}
-                                  {(!isEditing || user?.role !== USER_ROLE.MERCHANT_USER) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.MERCHANT_USER) && (
                                     <SelectItem value={USER_ROLE.MERCHANT_USER}>
                                       Usuario del Comercio
                                     </SelectItem>
                                   )}
-                                  {(!isEditing || user?.role !== USER_ROLE.LOGISTICS_PROVIDER) && (
+                                  {(!isEditing ||
+                                    formRole !==
+                                      USER_ROLE.LOGISTICS_PROVIDER) && (
                                     <SelectItem
                                       value={USER_ROLE.LOGISTICS_PROVIDER}
                                     >
                                       Proveedor Logístico
                                     </SelectItem>
                                   )}
-                                  {(!isEditing || user?.role !== USER_ROLE.DRIVER) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.DRIVER) && (
                                     <SelectItem value={USER_ROLE.DRIVER}>
                                       Conductor
                                     </SelectItem>
@@ -657,7 +668,8 @@ export function UserForm({ userId }: UserFormProps) {
                               {/* Roles visibles para OWNER */}
                               {currentUser?.role === USER_ROLE.OWNER && (
                                 <>
-                                  {(!isEditing || user?.role !== USER_ROLE.MERCHANT_USER) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.MERCHANT_USER) && (
                                     <SelectItem value={USER_ROLE.MERCHANT_USER}>
                                       Usuario del Comercio
                                     </SelectItem>
@@ -669,12 +681,14 @@ export function UserForm({ userId }: UserFormProps) {
                               {currentUser?.role ===
                                 USER_ROLE.LOGISTICS_PROVIDER && (
                                 <>
-                                  {(!isEditing || user?.role !== USER_ROLE.SUPERVISOR) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.SUPERVISOR) && (
                                     <SelectItem value={USER_ROLE.SUPERVISOR}>
                                       Supervisor
                                     </SelectItem>
                                   )}
-                                  {(!isEditing || user?.role !== USER_ROLE.DRIVER) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.DRIVER) && (
                                     <SelectItem value={USER_ROLE.DRIVER}>
                                       Conductor
                                     </SelectItem>
@@ -685,7 +699,8 @@ export function UserForm({ userId }: UserFormProps) {
                               {/* Roles visibles para SUPERVISOR */}
                               {currentUser?.role === USER_ROLE.SUPERVISOR && (
                                 <>
-                                  {(!isEditing || user?.role !== USER_ROLE.DRIVER) && (
+                                  {(!isEditing ||
+                                    formRole !== USER_ROLE.DRIVER) && (
                                     <SelectItem value={USER_ROLE.DRIVER}>
                                       Conductor
                                     </SelectItem>
