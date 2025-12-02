@@ -544,19 +544,27 @@ export function UserForm({ userId }: UserFormProps) {
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isPending}
+                      disabled={isPending || isEditing}
                     >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un rol" />
                         </SelectTrigger>
                       </FormControl>
+                      {isEditing && (
+                        <FormDescription>
+                          El rol no se puede modificar al editar un usuario
+                        </FormDescription>
+                      )}
                       <SelectContent>
                         {/* Determinar qué roles están permitidos según el usuario actual */}
                         {(() => {
                           const allowedRolesForCurrentUser: string[] = [];
-                          
-                          if (currentUser?.role === USER_ROLE.SAAS_ADMIN || currentUser?.role === USER_ROLE.SAAS_EDITOR) {
+
+                          if (
+                            currentUser?.role === USER_ROLE.SAAS_ADMIN ||
+                            currentUser?.role === USER_ROLE.SAAS_EDITOR
+                          ) {
                             allowedRolesForCurrentUser.push(
                               USER_ROLE.SAAS_ADMIN,
                               USER_ROLE.SAAS_EDITOR,
@@ -566,15 +574,25 @@ export function UserForm({ userId }: UserFormProps) {
                               USER_ROLE.DRIVER
                             );
                           } else if (currentUser?.role === USER_ROLE.OWNER) {
-                            allowedRolesForCurrentUser.push(USER_ROLE.MERCHANT_USER);
-                          } else if (currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER) {
-                            allowedRolesForCurrentUser.push(USER_ROLE.SUPERVISOR, USER_ROLE.DRIVER);
-                          } else if (currentUser?.role === USER_ROLE.SUPERVISOR) {
+                            allowedRolesForCurrentUser.push(
+                              USER_ROLE.MERCHANT_USER
+                            );
+                          } else if (
+                            currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER
+                          ) {
+                            allowedRolesForCurrentUser.push(
+                              USER_ROLE.SUPERVISOR,
+                              USER_ROLE.DRIVER
+                            );
+                          } else if (
+                            currentUser?.role === USER_ROLE.SUPERVISOR
+                          ) {
                             allowedRolesForCurrentUser.push(USER_ROLE.DRIVER);
                           }
 
                           // Al editar, incluir el rol actual del usuario solo si NO está ya en las opciones permitidas
-                          const shouldShowUserRole = isEditing &&
+                          const shouldShowUserRole =
+                            isEditing &&
                             user?.role &&
                             user.role !== USER_ROLE.CUSTOMER &&
                             !allowedRolesForCurrentUser.includes(user.role);
@@ -584,19 +602,27 @@ export function UserForm({ userId }: UserFormProps) {
                               {/* Mostrar el rol del usuario editado solo si no está en las opciones permitidas */}
                               {shouldShowUserRole && (
                                 <SelectItem value={user.role}>
-                                  {user.role === USER_ROLE.SAAS_ADMIN && "Administrador SAAS"}
-                                  {user.role === USER_ROLE.SAAS_EDITOR && "Editor SAAS"}
-                                  {user.role === USER_ROLE.OWNER && "Propietario"}
-                                  {user.role === USER_ROLE.MERCHANT_USER && "Usuario del Comercio"}
-                                  {user.role === USER_ROLE.LOGISTICS_PROVIDER && "Proveedor Logístico"}
-                                  {user.role === USER_ROLE.SUPERVISOR && "Supervisor"}
-                                  {user.role === USER_ROLE.DRIVER && "Conductor"}
+                                  {user.role === USER_ROLE.SAAS_ADMIN &&
+                                    "Administrador SAAS"}
+                                  {user.role === USER_ROLE.SAAS_EDITOR &&
+                                    "Editor SAAS"}
+                                  {user.role === USER_ROLE.OWNER &&
+                                    "Propietario"}
+                                  {user.role === USER_ROLE.MERCHANT_USER &&
+                                    "Usuario del Comercio"}
+                                  {user.role === USER_ROLE.LOGISTICS_PROVIDER &&
+                                    "Proveedor Logístico"}
+                                  {user.role === USER_ROLE.SUPERVISOR &&
+                                    "Supervisor"}
+                                  {user.role === USER_ROLE.DRIVER &&
+                                    "Conductor"}
                                 </SelectItem>
                               )}
 
                               {/* Roles visibles para SAAS_ADMIN y SAAS_EDITOR */}
                               {(currentUser?.role === USER_ROLE.SAAS_ADMIN ||
-                                currentUser?.role === USER_ROLE.SAAS_EDITOR) && (
+                                currentUser?.role ===
+                                  USER_ROLE.SAAS_EDITOR) && (
                                 <>
                                   <SelectItem value={USER_ROLE.SAAS_ADMIN}>
                                     Administrador SAAS
@@ -610,7 +636,9 @@ export function UserForm({ userId }: UserFormProps) {
                                   <SelectItem value={USER_ROLE.MERCHANT_USER}>
                                     Usuario del Comercio
                                   </SelectItem>
-                                  <SelectItem value={USER_ROLE.LOGISTICS_PROVIDER}>
+                                  <SelectItem
+                                    value={USER_ROLE.LOGISTICS_PROVIDER}
+                                  >
                                     Proveedor Logístico
                                   </SelectItem>
                                   <SelectItem value={USER_ROLE.DRIVER}>
@@ -629,7 +657,8 @@ export function UserForm({ userId }: UserFormProps) {
                               )}
 
                               {/* Roles visibles para LOGISTICS_PROVIDER */}
-                              {currentUser?.role === USER_ROLE.LOGISTICS_PROVIDER && (
+                              {currentUser?.role ===
+                                USER_ROLE.LOGISTICS_PROVIDER && (
                                 <>
                                   <SelectItem value={USER_ROLE.SUPERVISOR}>
                                     Supervisor
