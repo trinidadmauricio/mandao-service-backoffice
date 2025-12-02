@@ -147,15 +147,25 @@ export function UserForm({ userId }: UserFormProps) {
       )
         ? (validRole as (typeof allowedRoles)[number])
         : USER_ROLE.MERCHANT_USER;
-      
-      // Usar setValue en lugar de reset para actualizar solo los campos necesarios
-      form.setValue("email", user.email);
-      form.setValue("first_name", user.first_name);
-      form.setValue("last_name", user.last_name);
-      form.setValue("phone", user.phone || "");
-      form.setValue("role", roleForForm);
-      form.setValue("status", (user.status as "ACTIVE" | "INACTIVE" | "SUSPENDED") || "ACTIVE");
-      form.setValue("password", "");
+
+      // Usar reset para establecer todos los valores de una vez
+      // Esto asegura que el formulario se actualice correctamente
+      // shouldValidate: false para no validar al cargar
+      form.reset(
+        {
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone || "",
+          role: roleForForm,
+          status:
+            (user.status as "ACTIVE" | "INACTIVE" | "SUSPENDED") || "ACTIVE",
+          password: "",
+        },
+        {
+          keepDefaultValues: false,
+        }
+      );
     }
   }, [user, isEditing, form]);
 
@@ -542,7 +552,7 @@ export function UserForm({ userId }: UserFormProps) {
                     <FormLabel>Rol *</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      value={field.value}
+                      value={field.value || ""}
                       disabled={isPending || isEditing}
                     >
                       <FormControl>
@@ -589,34 +599,31 @@ export function UserForm({ userId }: UserFormProps) {
                             allowedRolesForCurrentUser.push(USER_ROLE.DRIVER);
                           }
 
-                          // Obtener el rol que está en el formulario (puede ser diferente de user.role si era CUSTOMER)
-                          const formRole = isEditing && user ? 
-                            (user.role === USER_ROLE.CUSTOMER ? USER_ROLE.MERCHANT_USER : user.role) : 
-                            null;
+                          // Obtener el valor actual del formulario para asegurar que el SelectItem esté presente
+                          const currentFormRole = field.value;
 
                           return (
                             <>
                               {/* Al editar, SIEMPRE mostrar el rol del usuario editado primero para que SelectValue lo encuentre */}
-                              {/* Usar el mismo valor que se setea en el formulario */}
-                              {isEditing && formRole && (
-                                  <SelectItem value={formRole}>
-                                    {formRole === USER_ROLE.SAAS_ADMIN &&
-                                      "Administrador SAAS"}
-                                    {formRole === USER_ROLE.SAAS_EDITOR &&
-                                      "Editor SAAS"}
-                                    {formRole === USER_ROLE.OWNER &&
-                                      "Propietario"}
-                                    {formRole === USER_ROLE.MERCHANT_USER &&
-                                      "Usuario del Comercio"}
-                                    {formRole ===
-                                      USER_ROLE.LOGISTICS_PROVIDER &&
-                                      "Proveedor Logístico"}
-                                    {formRole === USER_ROLE.SUPERVISOR &&
-                                      "Supervisor"}
-                                    {formRole === USER_ROLE.DRIVER &&
-                                      "Conductor"}
-                                  </SelectItem>
-                                )}
+                              {/* Usar el valor actual del formulario para asegurar coincidencia exacta */}
+                              {/* Esto es crítico: el SelectItem debe estar presente cuando el SelectValue se renderiza */}
+                              {isEditing && currentFormRole && (
+                                <SelectItem key={`current-role-${currentFormRole}`} value={currentFormRole}>
+                                  {currentFormRole === USER_ROLE.SAAS_ADMIN &&
+                                    "Administrador SAAS"}
+                                  {currentFormRole === USER_ROLE.SAAS_EDITOR &&
+                                    "Editor SAAS"}
+                                  {currentFormRole === USER_ROLE.OWNER &&
+                                    "Propietario"}
+                                  {currentFormRole === USER_ROLE.MERCHANT_USER &&
+                                    "Usuario del Comercio"}
+                                  {currentFormRole === USER_ROLE.LOGISTICS_PROVIDER &&
+                                    "Proveedor Logístico"}
+                                  {currentFormRole === USER_ROLE.SUPERVISOR &&
+                                    "Supervisor"}
+                                  {currentFormRole === USER_ROLE.DRIVER && "Conductor"}
+                                </SelectItem>
+                              )}
 
                               {/* Roles visibles para SAAS_ADMIN y SAAS_EDITOR */}
                               {(currentUser?.role === USER_ROLE.SAAS_ADMIN ||
@@ -624,31 +631,31 @@ export function UserForm({ userId }: UserFormProps) {
                                   USER_ROLE.SAAS_EDITOR) && (
                                 <>
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.SAAS_ADMIN) && (
+                                    currentFormRole !== USER_ROLE.SAAS_ADMIN) && (
                                     <SelectItem value={USER_ROLE.SAAS_ADMIN}>
                                       Administrador SAAS
                                     </SelectItem>
                                   )}
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.SAAS_EDITOR) && (
+                                    currentFormRole !== USER_ROLE.SAAS_EDITOR) && (
                                     <SelectItem value={USER_ROLE.SAAS_EDITOR}>
                                       Editor SAAS
                                     </SelectItem>
                                   )}
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.OWNER) && (
+                                    currentFormRole !== USER_ROLE.OWNER) && (
                                     <SelectItem value={USER_ROLE.OWNER}>
                                       Propietario
                                     </SelectItem>
                                   )}
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.MERCHANT_USER) && (
+                                    currentFormRole !== USER_ROLE.MERCHANT_USER) && (
                                     <SelectItem value={USER_ROLE.MERCHANT_USER}>
                                       Usuario del Comercio
                                     </SelectItem>
                                   )}
                                   {(!isEditing ||
-                                    formRole !==
+                                    currentFormRole !==
                                       USER_ROLE.LOGISTICS_PROVIDER) && (
                                     <SelectItem
                                       value={USER_ROLE.LOGISTICS_PROVIDER}
@@ -657,7 +664,7 @@ export function UserForm({ userId }: UserFormProps) {
                                     </SelectItem>
                                   )}
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.DRIVER) && (
+                                    currentFormRole !== USER_ROLE.DRIVER) && (
                                     <SelectItem value={USER_ROLE.DRIVER}>
                                       Conductor
                                     </SelectItem>
@@ -669,7 +676,7 @@ export function UserForm({ userId }: UserFormProps) {
                               {currentUser?.role === USER_ROLE.OWNER && (
                                 <>
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.MERCHANT_USER) && (
+                                    currentFormRole !== USER_ROLE.MERCHANT_USER) && (
                                     <SelectItem value={USER_ROLE.MERCHANT_USER}>
                                       Usuario del Comercio
                                     </SelectItem>
@@ -682,13 +689,13 @@ export function UserForm({ userId }: UserFormProps) {
                                 USER_ROLE.LOGISTICS_PROVIDER && (
                                 <>
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.SUPERVISOR) && (
+                                    currentFormRole !== USER_ROLE.SUPERVISOR) && (
                                     <SelectItem value={USER_ROLE.SUPERVISOR}>
                                       Supervisor
                                     </SelectItem>
                                   )}
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.DRIVER) && (
+                                    currentFormRole !== USER_ROLE.DRIVER) && (
                                     <SelectItem value={USER_ROLE.DRIVER}>
                                       Conductor
                                     </SelectItem>
@@ -700,7 +707,7 @@ export function UserForm({ userId }: UserFormProps) {
                               {currentUser?.role === USER_ROLE.SUPERVISOR && (
                                 <>
                                   {(!isEditing ||
-                                    formRole !== USER_ROLE.DRIVER) && (
+                                    currentFormRole !== USER_ROLE.DRIVER) && (
                                     <SelectItem value={USER_ROLE.DRIVER}>
                                       Conductor
                                     </SelectItem>
