@@ -496,6 +496,20 @@ export function UserForm({ userId }: UserFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        {/* Al editar, siempre incluir el rol actual del usuario para que se muestre correctamente */}
+                        {/* Esto asegura que el rol se cargue incluso si no está en las opciones permitidas para crear */}
+                        {isEditing && user?.role && user.role !== USER_ROLE.CUSTOMER && (
+                          <SelectItem value={user.role}>
+                            {user.role === USER_ROLE.SAAS_ADMIN && 'Administrador SAAS'}
+                            {user.role === USER_ROLE.SAAS_EDITOR && 'Editor SAAS'}
+                            {user.role === USER_ROLE.OWNER && 'Propietario'}
+                            {user.role === USER_ROLE.MERCHANT_USER && 'Usuario del Comercio'}
+                            {user.role === USER_ROLE.LOGISTICS_PROVIDER && 'Proveedor Logístico'}
+                            {user.role === USER_ROLE.SUPERVISOR && 'Supervisor'}
+                            {user.role === USER_ROLE.DRIVER && 'Conductor'}
+                          </SelectItem>
+                        )}
+
                         {/* Roles visibles para SAAS_ADMIN y SAAS_EDITOR */}
                         {(currentUser?.role === USER_ROLE.SAAS_ADMIN || currentUser?.role === USER_ROLE.SAAS_EDITOR) && (
                           <>
