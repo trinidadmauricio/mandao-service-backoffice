@@ -592,13 +592,6 @@ export function UserForm({ userId }: UserFormProps) {
                             allowedRolesForCurrentUser.push(USER_ROLE.DRIVER);
                           }
 
-                          // Al editar, incluir el rol actual del usuario solo si NO está ya en las opciones permitidas
-                          const shouldShowUserRole =
-                            isEditing &&
-                            user?.role &&
-                            user.role !== USER_ROLE.CUSTOMER &&
-                            !allowedRolesForCurrentUser.includes(user.role);
-
                           return (
                             <>
                               {/* Al editar, SIEMPRE mostrar el rol del usuario editado primero para que SelectValue lo encuentre */}
