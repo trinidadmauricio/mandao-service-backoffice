@@ -47,7 +47,10 @@ export interface LogisticsProvidersFilters {
   is_global?: boolean;
 }
 
-export function useLogisticsProviders(filters?: LogisticsProvidersFilters) {
+export function useLogisticsProviders(
+  filters?: LogisticsProvidersFilters,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ["logistics-providers", filters],
     queryFn: async () => {
@@ -73,6 +76,7 @@ export function useLogisticsProviders(filters?: LogisticsProvidersFilters) {
       );
       return response.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

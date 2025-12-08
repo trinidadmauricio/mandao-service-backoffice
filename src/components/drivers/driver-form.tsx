@@ -85,16 +85,11 @@ interface DriverFormProps {
 export function DriverForm({ driverId }: DriverFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
   const isEditing = !!driverId;
   const { data: driver, isLoading: isLoadingDriver } = useDriver(
     driverId || ""
   );
-  const { data: logisticsProviders } = useLogisticsProviders();
-  const { data: users } = useUsers({ role: "DRIVER" });
-  const { data: vehicles } = useVehicles();
-  const createDriver = useCreateDriver();
-  const updateDriver = useUpdateDriver();
 
   // Determinar si el campo "Proveedor Logístico" debe estar oculto
   // LOGISTICS_PROVIDER y SUPERVISOR no deben ver este campo, ya que pertenecen a un proveedor específico
@@ -102,6 +97,22 @@ export function DriverForm({ driverId }: DriverFormProps) {
     currentUser &&
     (currentUser.role === USER_ROLE.LOGISTICS_PROVIDER ||
       currentUser.role === USER_ROLE.SUPERVISOR);
+
+  // Solo llamar al API si:
+  // 1. No está cargando la autenticación
+  // 2. El usuario NO es LOGISTICS_PROVIDER ni SUPERVISOR
+  // 3. El usuario existe (no es null/undefined)
+  const shouldFetchLogisticsProviders = Boolean(
+    !isLoadingAuth && currentUser && !shouldHideLogisticsProviderField
+  );
+
+  const { data: logisticsProviders } = useLogisticsProviders(undefined, {
+    enabled: shouldFetchLogisticsProviders,
+  });
+  const { data: users } = useUsers({ role: "DRIVER" });
+  const { data: vehicles } = useVehicles();
+  const createDriver = useCreateDriver();
+  const updateDriver = useUpdateDriver();
 
   const form = useForm<DriverFormData>({
     resolver: zodResolver(driverSchema),
@@ -144,26 +155,37 @@ export function DriverForm({ driverId }: DriverFormProps) {
 
   useEffect(() => {
     if (driver && isEditing) {
-      form.reset({
-        logistics_provider_id: driver.logistics_provider_id,
-        user_id: driver.user_id,
-        identity_document: driver.identity_document,
-        driving_license: driver.driving_license,
-        date_of_birth: driver.date_of_birth.split("T")[0],
-        emergency_contact: driver.emergency_contact as {
-          name: string;
-          phone: string;
+      // Asegurarse de que los valores no sean undefined o null
+      const emergencyContact =
+        (driver.emergency_contact as {
+          name?: string;
+          phone?: string;
           relationship?: string;
+        }) || {};
+
+      form.reset({
+        logistics_provider_id: driver.logistics_provider_id || "",
+        user_id: driver.user_id || "",
+        identity_document: driver.identity_document || "",
+        driving_license: driver.driving_license || "",
+        date_of_birth: driver.date_of_birth
+          ? driver.date_of_birth.split("T")[0]
+          : "",
+        emergency_contact: {
+          name: emergencyContact.name || "",
+          phone: emergencyContact.phone || "",
+          relationship: emergencyContact.relationship || "",
         },
-        has_own_vehicle: driver.has_own_vehicle,
+        has_own_vehicle: driver.has_own_vehicle ?? false,
         vehicle_id: driver.vehicle_id || "",
-        work_type: driver.work_type,
+        work_type: driver.work_type || "FULL_TIME",
         work_zone: driver.work_zone || "",
-        availability_status: driver.availability_status,
+        availability_status: driver.availability_status || "AVAILABLE",
         documents: driver.documents || {},
       });
     }
-  }, [driver, isEditing, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driver, isEditing]);
 
   const onSubmit = async (data: DriverFormData) => {
     try {
@@ -216,6 +238,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
   }
 
   const isPending = createDriver?.isPending || updateDriver?.isPending || false;
+  const isFieldDisabledForEdit = isEditing || isPending;
 
   return (
     <Card className="w-full max-w-4xl">
@@ -260,8 +283,12 @@ export function DriverForm({ driverId }: DriverFormProps) {
                     <FormItem>
                       <FormLabel>Proveedor Logístico *</FormLabel>
                       <Select
+                        key={`logistics-provider-${
+                          logisticsProviders?.length || 0
+                        }-${field.value || "empty"}`}
+                        name={field.name}
+                        value={field.value || undefined}
                         onValueChange={field.onChange}
-                        value={field.value}
                         disabled={isPending}
                       >
                         <FormControl>
@@ -290,9 +317,13 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Usuario *</FormLabel>
                     <Select
+                      key={`user-${users?.data?.length || 0}-${
+                        field.value || "empty"
+                      }`}
+                      name={field.name}
+                      value={field.value || undefined}
                       onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isPending}
+                      disabled={isFieldDisabledForEdit}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -328,7 +359,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Documento de Identidad *</FormLabel>
                     <FormControl>
-                      <Input disabled={isPending} {...field} />
+                      <Input disabled={isFieldDisabledForEdit} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -342,7 +373,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Licencia de Conducir *</FormLabel>
                     <FormControl>
-                      <Input disabled={isPending} {...field} />
+                      <Input disabled={isFieldDisabledForEdit} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -357,7 +388,11 @@ export function DriverForm({ driverId }: DriverFormProps) {
                 <FormItem>
                   <FormLabel>Fecha de Nacimiento *</FormLabel>
                   <FormControl>
-                    <Input type="date" disabled={isPending} {...field} />
+                    <Input
+                      type="date"
+                      disabled={isFieldDisabledForEdit}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -374,7 +409,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
                     <FormItem>
                       <FormLabel>Nombre *</FormLabel>
                       <FormControl>
-                        <Input disabled={isPending} {...field} />
+                        <Input disabled={isFieldDisabledForEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -387,7 +422,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
                     <FormItem>
                       <FormLabel>Teléfono *</FormLabel>
                       <FormControl>
-                        <Input disabled={isPending} {...field} />
+                        <Input disabled={isFieldDisabledForEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -400,7 +435,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
                     <FormItem>
                       <FormLabel>Relación</FormLabel>
                       <FormControl>
-                        <Input disabled={isPending} {...field} />
+                        <Input disabled={isFieldDisabledForEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -436,10 +471,14 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Vehículo *</FormLabel>
                     <Select
+                      key={`vehicle-${vehicles?.length || 0}-${
+                        field.value || "empty"
+                      }`}
+                      name={field.name}
+                      value={field.value || undefined}
                       onValueChange={(value) =>
                         field.onChange(value || undefined)
                       }
-                      value={field.value || undefined}
                       disabled={isPending}
                     >
                       <FormControl>
@@ -470,8 +509,10 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Tipo de Trabajo *</FormLabel>
                     <Select
+                      key={`work-type-${field.value || "empty"}`}
+                      name={field.name}
+                      value={field.value || undefined}
                       onValueChange={field.onChange}
-                      value={field.value}
                       disabled={isPending}
                     >
                       <FormControl>
@@ -499,8 +540,10 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Estado de Disponibilidad *</FormLabel>
                     <Select
+                      key={`availability-${field.value || "empty"}`}
+                      name={field.name}
+                      value={field.value || undefined}
                       onValueChange={field.onChange}
-                      value={field.value}
                       disabled={isPending}
                     >
                       <FormControl>
