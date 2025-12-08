@@ -38,8 +38,15 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copiar código fuente y archivos de configuración
 COPY . .
 
-# Variables de entorno para el build
-# Next.js necesita estas variables en tiempo de build si se usan en el código
+# ARG para recibir variables en tiempo de build
+# IMPORTANTE: Las variables NEXT_PUBLIC_* se inyectan en BUILD TIME, no en runtime
+# Debes pasarlas con --build-arg al construir la imagen
+ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Convertir ARG a ENV para que Next.js las use durante el build
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
