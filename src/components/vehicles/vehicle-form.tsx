@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
-import React from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from '@/lib/hooks/use-vehicles';
 import { useLogisticsProviders } from '@/lib/hooks/use-logistics-providers';
-import { useDrivers } from '@/lib/hooks/use-drivers';
+import { useDrivers, useDriver } from '@/lib/hooks/use-drivers';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { USER_ROLE } from '@/lib/constants/roles';
 import { Button } from '@/components/ui/button';
@@ -59,18 +58,25 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const { user: currentUser } = useAuth();
   const isEditing = !!vehicleId;
   const { data: vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId || '');
-  const { data: logisticsProviders } = useLogisticsProviders();
-  // Cargar todos los drivers disponibles para determinar qué proveedores tienen drivers disponibles
-  const { data: allDrivers } = useDrivers({ availability_status: 'AVAILABLE' });
-  const createVehicle = useCreateVehicle();
-  const updateVehicle = useUpdateVehicle();
-
+  
   // Determinar si el campo "Proveedor Logístico" debe estar oculto
   // LOGISTICS_PROVIDER y SUPERVISOR no deben ver este campo, ya que pertenecen a un proveedor específico
   const shouldHideLogisticsProviderField =
     currentUser &&
     (currentUser.role === USER_ROLE.LOGISTICS_PROVIDER ||
       currentUser.role === USER_ROLE.SUPERVISOR);
+  
+  const { data: logisticsProviders } = useLogisticsProviders(
+    undefined,
+    { enabled: !shouldHideLogisticsProviderField }
+  );
+  // Cargar todos los drivers disponibles para determinar qué proveedores tienen drivers disponibles
+  const { data: allDrivers } = useDrivers({ availability_status: 'AVAILABLE' });
+  
+  // Cargar el driver asignado específicamente si existe (para incluirlo aunque no esté disponible)
+  const { data: assignedDriver } = useDriver(vehicle?.driver_id || '');
+  const createVehicle = useCreateVehicle();
+  const updateVehicle = useUpdateVehicle();
 
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
@@ -98,17 +104,68 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
   // Obtener el proveedor seleccionado del formulario
   const selectedProviderId = form.watch('logistics_provider_id');
   
-  // Cargar drivers filtrados por proveedor cuando se selecciona uno (solo disponibles)
+  // Si estamos editando, usar el logistics_provider_id del vehículo si no hay uno seleccionado
+  const providerIdForDrivers = selectedProviderId && selectedProviderId !== '' 
+    ? selectedProviderId 
+    : (isEditing && vehicle?.logistics_provider_id ? vehicle.logistics_provider_id : undefined);
+  
+  // Cargar drivers filtrados por proveedor cuando se selecciona uno
+  // Si estamos editando y hay un driver asignado, no filtrar por availability_status para incluirlo
+  const shouldFilterByAvailability = !(isEditing && vehicle?.driver_id);
   const { data: filteredDrivers } = useDrivers(
-    selectedProviderId ? { logistics_provider_id: selectedProviderId, availability_status: 'AVAILABLE' } : undefined
+    providerIdForDrivers 
+      ? { 
+          logistics_provider_id: providerIdForDrivers, 
+          ...(shouldFilterByAvailability ? { availability_status: 'AVAILABLE' } : {})
+        } 
+      : undefined
   );
   
-  // Usar drivers filtrados si hay proveedor seleccionado, sino todos
-  const drivers = selectedProviderId ? filteredDrivers : allDrivers;
+  // Buscar el driver que tiene este vehicle_id si el vehículo no tiene driver_id
+  const driverWithVehicle = useMemo(() => {
+    if (isEditing && vehicle && !vehicle.driver_id && allDrivers?.data) {
+      return allDrivers.data.find((d) => d.vehicle_id === vehicle.id);
+    }
+    return undefined;
+  }, [isEditing, vehicle, allDrivers]);
+
+  // Cargar el driver que tiene este vehicle_id si existe
+  const { data: driverWithVehicleData } = useDriver(driverWithVehicle?.id || '');
+
+  // Usar drivers filtrados si hay proveedor seleccionado o del vehículo, sino todos
+  // Asegurar que el driver asignado siempre esté en la lista si existe
+  const drivers = useMemo(() => {
+    const baseDrivers = providerIdForDrivers ? filteredDrivers : allDrivers;
+    
+    // Si hay un driver asignado (desde vehicle.driver_id) y no está en la lista, agregarlo
+    if (assignedDriver && baseDrivers?.data) {
+      const driverExists = baseDrivers.data.some((d) => d.id === assignedDriver.id);
+      if (!driverExists) {
+        return {
+          ...baseDrivers,
+          data: [assignedDriver, ...baseDrivers.data],
+        };
+      }
+    }
+    
+    // Si hay un driver que tiene este vehicle_id (cargado o encontrado) y no está en la lista, agregarlo
+    const driverToAdd = driverWithVehicleData || driverWithVehicle;
+    if (driverToAdd && baseDrivers?.data) {
+      const driverExists = baseDrivers.data.some((d) => d.id === driverToAdd.id);
+      if (!driverExists) {
+        return {
+          ...baseDrivers,
+          data: [driverToAdd, ...baseDrivers.data],
+        };
+      }
+    }
+    
+    return baseDrivers;
+  }, [providerIdForDrivers, filteredDrivers, allDrivers, assignedDriver, driverWithVehicle, driverWithVehicleData]);
 
   // Filtrar proveedores para mostrar solo los que tienen drivers disponibles
   // El backend ya filtra por availability_status='AVAILABLE', así que todos los drivers aquí son disponibles
-  const providersWithDrivers = React.useMemo(() => {
+  const providersWithDrivers = useMemo(() => {
     if (!logisticsProviders || !allDrivers?.data) return [];
     
     // Obtener IDs de proveedores que tienen drivers disponibles
@@ -131,25 +188,48 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
     }
   }, [isEditing, shouldHideLogisticsProviderField, currentUser, form]);
 
-  // Limpiar driver seleccionado cuando cambia el proveedor
+  // Limpiar driver seleccionado cuando cambia el proveedor (solo si no estamos en modo edición o si el driver no pertenece al nuevo proveedor)
   useEffect(() => {
-    if (selectedProviderId) {
+    // No limpiar si estamos editando y acabamos de cargar el vehículo
+    if (selectedProviderId && !isEditing) {
       // Verificar si el driver actual pertenece al proveedor seleccionado
       const currentDriverId = form.getValues('driver_id');
       if (currentDriverId) {
-        const currentDriver = allDrivers?.data?.find((d) => d.id === currentDriverId);
+        // Buscar en la lista combinada de drivers (incluyendo el asignado)
+        const currentDriver = drivers?.data?.find((d) => d.id === currentDriverId) || assignedDriver;
         if (currentDriver && currentDriver.logistics_provider_id !== selectedProviderId) {
           form.setValue('driver_id', '');
         }
       }
     }
-  }, [selectedProviderId, form, allDrivers]);
+  }, [selectedProviderId, form, drivers, assignedDriver, isEditing]);
 
   useEffect(() => {
     if (vehicle && isEditing) {
+      // Si el vehículo no tiene driver_id, usar el driver que tiene este vehicle_id
+      let driverIdToSet = vehicle.driver_id || '';
+      
+      if (!driverIdToSet) {
+        // Buscar en allDrivers primero
+        const driverWithThisVehicle = allDrivers?.data?.find(
+          (driver) => driver.vehicle_id === vehicle.id
+        );
+        if (driverWithThisVehicle) {
+          driverIdToSet = driverWithThisVehicle.id;
+        } else if (driverWithVehicleData) {
+          // Si no está en allDrivers pero lo cargamos con useDriver, usarlo
+          driverIdToSet = driverWithVehicleData.id;
+        }
+      }
+      
+      // Si hay un driver asignado (assignedDriver), usarlo como prioridad
+      if (assignedDriver && assignedDriver.id) {
+        driverIdToSet = assignedDriver.id;
+      }
+      
       form.reset({
         logistics_provider_id: vehicle.logistics_provider_id || '',
-        driver_id: vehicle.driver_id || '',
+        driver_id: driverIdToSet,
         vehicle_type: vehicle.vehicle_type,
         license_plate: vehicle.license_plate,
         brand: vehicle.brand,
@@ -163,7 +243,8 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
         specifications: vehicle.specifications || {},
       });
     }
-  }, [vehicle, isEditing, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicle, isEditing, allDrivers, driverWithVehicleData, assignedDriver]);
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
@@ -243,7 +324,13 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Vehículo *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                    <Select
+                      key={`vehicle-type-${field.value || 'empty'}`}
+                      name={field.name}
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled={isPending}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un tipo" />
@@ -347,7 +434,13 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estado *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isPending}>
+                    <Select
+                      key={`status-${field.value || 'empty'}`}
+                      name={field.name}
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled={isPending}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un estado" />
@@ -443,6 +536,8 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                     <FormItem>
                       <FormLabel>Proveedor Logístico</FormLabel>
                       <Select
+                        key={`logistics-provider-${logisticsProviders?.length || 0}-${field.value || 'empty'}`}
+                        name={field.name}
                         onValueChange={(value) => field.onChange(value || undefined)}
                         value={field.value || undefined}
                         disabled={isPending}
@@ -473,15 +568,17 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
                   <FormItem>
                     <FormLabel>Driver Asignado</FormLabel>
                     <Select
+                      key={`driver-${drivers?.data?.length || 0}-${field.value || 'empty'}-${assignedDriver?.id || 'no-assigned'}`}
+                      name={field.name}
                       onValueChange={(value) => field.onChange(value || undefined)}
                       value={field.value || undefined}
-                      disabled={isPending || !selectedProviderId || !drivers?.data?.length}
+                      disabled={isPending || (!providerIdForDrivers && !isEditing) || !drivers?.data?.length}
                     >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue 
                             placeholder={
-                              !selectedProviderId 
+                              (!providerIdForDrivers && !isEditing)
                                 ? 'Selecciona un proveedor primero' 
                                 : !drivers?.data?.length 
                                 ? 'No hay drivers disponibles' 
