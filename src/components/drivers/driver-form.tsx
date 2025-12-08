@@ -85,23 +85,30 @@ interface DriverFormProps {
 export function DriverForm({ driverId }: DriverFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
   const isEditing = !!driverId;
   const { data: driver, isLoading: isLoadingDriver } = useDriver(
     driverId || ""
   );
-  
+
   // Determinar si el campo "Proveedor Logístico" debe estar oculto
   // LOGISTICS_PROVIDER y SUPERVISOR no deben ver este campo, ya que pertenecen a un proveedor específico
   const shouldHideLogisticsProviderField =
     currentUser &&
     (currentUser.role === USER_ROLE.LOGISTICS_PROVIDER ||
       currentUser.role === USER_ROLE.SUPERVISOR);
-  
-  const { data: logisticsProviders } = useLogisticsProviders(
-    undefined,
-    { enabled: !shouldHideLogisticsProviderField }
+
+  // Solo llamar al API si:
+  // 1. No está cargando la autenticación
+  // 2. El usuario NO es LOGISTICS_PROVIDER ni SUPERVISOR
+  // 3. El usuario existe (no es null/undefined)
+  const shouldFetchLogisticsProviders = Boolean(
+    !isLoadingAuth && currentUser && !shouldHideLogisticsProviderField
   );
+
+  const { data: logisticsProviders } = useLogisticsProviders(undefined, {
+    enabled: shouldFetchLogisticsProviders,
+  });
   const { data: users } = useUsers({ role: "DRIVER" });
   const { data: vehicles } = useVehicles();
   const createDriver = useCreateDriver();
@@ -149,18 +156,21 @@ export function DriverForm({ driverId }: DriverFormProps) {
   useEffect(() => {
     if (driver && isEditing) {
       // Asegurarse de que los valores no sean undefined o null
-      const emergencyContact = driver.emergency_contact as {
-        name?: string;
-        phone?: string;
-        relationship?: string;
-      } || {};
-      
+      const emergencyContact =
+        (driver.emergency_contact as {
+          name?: string;
+          phone?: string;
+          relationship?: string;
+        }) || {};
+
       form.reset({
         logistics_provider_id: driver.logistics_provider_id || "",
         user_id: driver.user_id || "",
         identity_document: driver.identity_document || "",
         driving_license: driver.driving_license || "",
-        date_of_birth: driver.date_of_birth ? driver.date_of_birth.split("T")[0] : "",
+        date_of_birth: driver.date_of_birth
+          ? driver.date_of_birth.split("T")[0]
+          : "",
         emergency_contact: {
           name: emergencyContact.name || "",
           phone: emergencyContact.phone || "",
@@ -273,7 +283,9 @@ export function DriverForm({ driverId }: DriverFormProps) {
                     <FormItem>
                       <FormLabel>Proveedor Logístico *</FormLabel>
                       <Select
-                        key={`logistics-provider-${logisticsProviders?.length || 0}-${field.value || 'empty'}`}
+                        key={`logistics-provider-${
+                          logisticsProviders?.length || 0
+                        }-${field.value || "empty"}`}
                         name={field.name}
                         value={field.value || undefined}
                         onValueChange={field.onChange}
@@ -305,7 +317,9 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Usuario *</FormLabel>
                     <Select
-                      key={`user-${users?.data?.length || 0}-${field.value || 'empty'}`}
+                      key={`user-${users?.data?.length || 0}-${
+                        field.value || "empty"
+                      }`}
                       name={field.name}
                       value={field.value || undefined}
                       onValueChange={field.onChange}
@@ -374,7 +388,11 @@ export function DriverForm({ driverId }: DriverFormProps) {
                 <FormItem>
                   <FormLabel>Fecha de Nacimiento *</FormLabel>
                   <FormControl>
-                    <Input type="date" disabled={isFieldDisabledForEdit} {...field} />
+                    <Input
+                      type="date"
+                      disabled={isFieldDisabledForEdit}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -453,7 +471,9 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Vehículo *</FormLabel>
                     <Select
-                      key={`vehicle-${vehicles?.length || 0}-${field.value || 'empty'}`}
+                      key={`vehicle-${vehicles?.length || 0}-${
+                        field.value || "empty"
+                      }`}
                       name={field.name}
                       value={field.value || undefined}
                       onValueChange={(value) =>
@@ -489,7 +509,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Tipo de Trabajo *</FormLabel>
                     <Select
-                      key={`work-type-${field.value || 'empty'}`}
+                      key={`work-type-${field.value || "empty"}`}
                       name={field.name}
                       value={field.value || undefined}
                       onValueChange={field.onChange}
@@ -520,7 +540,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   <FormItem>
                     <FormLabel>Estado de Disponibilidad *</FormLabel>
                     <Select
-                      key={`availability-${field.value || 'empty'}`}
+                      key={`availability-${field.value || "empty"}`}
                       name={field.name}
                       value={field.value || undefined}
                       onValueChange={field.onChange}

@@ -55,7 +55,7 @@ interface VehicleFormProps {
 export function VehicleForm({ vehicleId }: VehicleFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
   const isEditing = !!vehicleId;
   const { data: vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId || '');
   
@@ -66,9 +66,19 @@ export function VehicleForm({ vehicleId }: VehicleFormProps) {
     (currentUser.role === USER_ROLE.LOGISTICS_PROVIDER ||
       currentUser.role === USER_ROLE.SUPERVISOR);
   
+  // Solo llamar al API si:
+  // 1. No está cargando la autenticación
+  // 2. El usuario NO es LOGISTICS_PROVIDER ni SUPERVISOR
+  // 3. El usuario existe (no es null/undefined)
+  const shouldFetchLogisticsProviders = Boolean(
+    !isLoadingAuth && 
+    currentUser && 
+    !shouldHideLogisticsProviderField
+  );
+  
   const { data: logisticsProviders } = useLogisticsProviders(
     undefined,
-    { enabled: !shouldHideLogisticsProviderField }
+    { enabled: shouldFetchLogisticsProviders }
   );
   // Cargar todos los drivers disponibles para determinar qué proveedores tienen drivers disponibles
   const { data: allDrivers } = useDrivers({ availability_status: 'AVAILABLE' });
