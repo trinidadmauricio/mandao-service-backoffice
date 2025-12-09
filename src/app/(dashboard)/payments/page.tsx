@@ -1,15 +1,17 @@
 'use client';
 
 import { RoleGuard } from '@/components/auth/role-guard';
+import { TenantRequiredGuard } from '@/components/auth/tenant-required-guard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PaymentsPage() {
   return (
-    <RoleGuard
-      allowedRoles={['OWNER', 'SUPERVISOR']}
-      fallback={<div>No tienes permisos para acceder a esta página</div>}
-    >
-      <div className="space-y-6">
+    <TenantRequiredGuard>
+      <RoleGuard
+        allowedRoles={['OWNER', 'SUPERVISOR']}
+        fallback={<div>No tienes permisos para acceder a esta página</div>}
+      >
+        <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Pagos</h1>
           <p className="text-muted-foreground mt-2">Gestiona los pagos y transacciones</p>
@@ -24,9 +26,10 @@ export default function PaymentsPage() {
               Gestión de pagos (pendiente implementar)
             </p>
           </CardContent>
-        </Card>
-      </div>
-    </RoleGuard>
+          </Card>
+        </div>
+      </RoleGuard>
+    </TenantRequiredGuard>
   );
 }
 

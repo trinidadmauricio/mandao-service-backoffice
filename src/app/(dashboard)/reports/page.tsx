@@ -5,16 +5,18 @@ import { OrdersReportPage } from '@/components/reports/orders-report-page';
 import { InventoryReportPage } from '@/components/reports/inventory-report-page';
 import { DriversReportPage } from '@/components/reports/drivers-report-page';
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import { TenantRequiredGuard } from '@/components/auth/tenant-required-guard';
 import { FileText, Package, Truck } from 'lucide-react';
 
 export default function ReportsPage() {
   return (
-    <PermissionGuard
-      resource="reports"
-      action="read"
-      fallback={<div>No tienes permisos para acceder a esta página</div>}
-    >
-      <div className="space-y-6">
+    <TenantRequiredGuard>
+      <PermissionGuard
+        resource="reports"
+        action="read"
+        fallback={<div>No tienes permisos para acceder a esta página</div>}
+      >
+        <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Reportes</h1>
         <p className="text-muted-foreground mt-2">
@@ -49,8 +51,9 @@ export default function ReportsPage() {
         <TabsContent value="drivers">
           <DriversReportPage />
         </TabsContent>
-      </Tabs>
-    </div>
-    </PermissionGuard>
+        </Tabs>
+      </div>
+      </PermissionGuard>
+    </TenantRequiredGuard>
   );
 }
