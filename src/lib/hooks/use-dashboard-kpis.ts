@@ -10,7 +10,7 @@ export type Period = 'today' | 'week' | 'month' | 'year';
 
 export function useDashboardKPIs(period: Period = 'month') {
   const { selectedTenantId } = useSelectedTenant();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const isSAASAdmin = user && (user.role === USER_ROLE.SAAS_ADMIN || user.role === USER_ROLE.SAAS_EDITOR);
 
   return useQuery({
@@ -31,7 +31,9 @@ export function useDashboardKPIs(period: Period = 'month') {
       );
       return response.data.data;
     },
-    enabled: !isSAASAdmin || !!selectedTenantId, // Solo habilitar si no es SAAS_ADMIN o si tiene tenant seleccionado
+    // No ejecutar mientras el auth esté cargando para evitar race condition
+    // Solo habilitar si no es SAAS_ADMIN o si tiene tenant seleccionado
+    enabled: !isLoading && (!isSAASAdmin || !!selectedTenantId),
     staleTime: 60 * 1000, // 1 minuto
   });
 }
