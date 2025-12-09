@@ -33,7 +33,7 @@ export interface OrdersReportData {
 
 export function useOrdersReport(filters?: OrdersReportFilters) {
   const { selectedTenantId } = useSelectedTenant();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const isSAASAdmin = user && (user.role === USER_ROLE.SAAS_ADMIN || user.role === USER_ROLE.SAAS_EDITOR);
 
   return useQuery({
@@ -54,7 +54,9 @@ export function useOrdersReport(filters?: OrdersReportFilters) {
       );
       return response.data.data;
     },
-    enabled: !isSAASAdmin || !!selectedTenantId, // Solo habilitar si no es SAAS_ADMIN o si tiene tenant seleccionado
+    // No ejecutar mientras el auth esté cargando para evitar race condition
+    // Solo habilitar si no es SAAS_ADMIN o si tiene tenant seleccionado
+    enabled: !isLoading && (!isSAASAdmin || !!selectedTenantId),
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
 }
