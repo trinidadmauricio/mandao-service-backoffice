@@ -3,6 +3,7 @@
 import { useSubscriptionLimits } from '@/lib/hooks/use-subscriptions';
 import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import { TenantRequiredGuard } from '@/components/auth/tenant-required-guard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChangePlanDialog } from '@/components/subscriptions/change-plan-dialog';
@@ -35,12 +36,13 @@ export default function SubscriptionSettingsPage() {
   }
 
   return (
-    <PermissionGuard
-      resource="subscriptions"
-      action="read"
-      fallback={<div>No tienes permisos para acceder a esta página</div>}
-    >
-      <div className="space-y-6">
+    <TenantRequiredGuard>
+      <PermissionGuard
+        resource="subscriptions"
+        action="read"
+        fallback={<div>No tienes permisos para acceder a esta página</div>}
+      >
+        <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Suscripción</h1>
@@ -105,9 +107,10 @@ export default function SubscriptionSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Límites y Uso */}
-        {limits && <UsageLimitsCard limits={limits} />}
-      </div>
-    </PermissionGuard>
+          {/* Límites y Uso */}
+          {limits && <UsageLimitsCard limits={limits} />}
+        </div>
+      </PermissionGuard>
+    </TenantRequiredGuard>
   );
 }

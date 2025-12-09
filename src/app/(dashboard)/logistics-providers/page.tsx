@@ -7,6 +7,7 @@ import {
   type LogisticsProvidersFilters,
 } from "@/lib/hooks/use-logistics-providers";
 import { PermissionGuard } from "@/components/auth/permission-guard";
+import { TenantRequiredGuard } from "@/components/auth/tenant-required-guard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,12 +108,13 @@ export default function LogisticsProvidersPage() {
   ];
 
   return (
-    <PermissionGuard
-      resource="logistics-providers"
-      action="read"
-      fallback={<div>No tienes permisos para acceder a esta página</div>}
-    >
-      {isLoading ? (
+    <TenantRequiredGuard>
+      <PermissionGuard
+        resource="logistics-providers"
+        action="read"
+        fallback={<div>No tienes permisos para acceder a esta página</div>}
+      >
+        {isLoading ? (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -349,8 +351,9 @@ export default function LogisticsProvidersPage() {
               )}
             </CardContent>
           </Card>
-        </div>
-      )}
-    </PermissionGuard>
+          </div>
+        )}
+      </PermissionGuard>
+    </TenantRequiredGuard>
   );
 }

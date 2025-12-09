@@ -3,6 +3,7 @@
 import { useCategories, useDeleteCategory } from '@/lib/hooks/use-categories';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import { TenantRequiredGuard } from '@/components/auth/tenant-required-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -60,22 +61,23 @@ export default function CategoriesPage() {
   }
 
   return (
-    <PermissionGuard
-      resource="products"
-      action="read"
-      allowedTenantTypes={['RETAIL']}
-      fallback={
-        <div className="py-6">
-          <div className="text-center p-8">
-            <h2 className="text-2xl font-bold mb-2">Acceso Restringido</h2>
-            <p className="text-muted-foreground">
-              Esta funcionalidad solo está disponible para tenants de tipo RETAIL.
-            </p>
+    <TenantRequiredGuard>
+      <PermissionGuard
+        resource="products"
+        action="read"
+        allowedTenantTypes={['RETAIL']}
+        fallback={
+          <div className="py-6">
+            <div className="text-center p-8">
+              <h2 className="text-2xl font-bold mb-2">Acceso Restringido</h2>
+              <p className="text-muted-foreground">
+                Esta funcionalidad solo está disponible para tenants de tipo RETAIL.
+              </p>
+            </div>
           </div>
-        </div>
-      }
-    >
-      <div className="space-y-6">
+        }
+      >
+        <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Categorías</h1>
@@ -149,9 +151,10 @@ export default function CategoriesPage() {
             <p className="text-center text-muted-foreground py-8">No hay categorías registradas</p>
           )}
         </CardContent>
-      </Card>
-    </div>
-    </PermissionGuard>
+        </Card>
+      </div>
+      </PermissionGuard>
+    </TenantRequiredGuard>
   );
 }
 

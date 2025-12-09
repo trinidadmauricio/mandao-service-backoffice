@@ -5,6 +5,7 @@ import { useOrders, type OrdersFilters } from '@/lib/hooks/use-orders';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useTenant, type Tenant } from '@/lib/hooks/use-tenant';
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import { TenantRequiredGuard } from '@/components/auth/tenant-required-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
@@ -182,12 +183,13 @@ export default function OrdersPage() {
   }
 
   return (
-    <PermissionGuard
-      resource="orders"
-      action="read"
-      fallback={<div>No tienes permisos para acceder a esta página</div>}
-    >
-      <div className="space-y-6">
+    <TenantRequiredGuard>
+      <PermissionGuard
+        resource="orders"
+        action="read"
+        fallback={<div>No tienes permisos para acceder a esta página</div>}
+      >
+        <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Órdenes</h1>
@@ -287,8 +289,9 @@ export default function OrdersPage() {
               emptyStateDescription="No se encontraron órdenes con los filtros seleccionados."
             />
           </CardContent>
-        </Card>
-      </div>
-    </PermissionGuard>
+          </Card>
+        </div>
+      </PermissionGuard>
+    </TenantRequiredGuard>
   );
 }

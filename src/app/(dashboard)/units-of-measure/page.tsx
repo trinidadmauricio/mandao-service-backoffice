@@ -1,6 +1,7 @@
 'use client';
 
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import { TenantRequiredGuard } from '@/components/auth/tenant-required-guard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Ruler } from 'lucide-react';
@@ -64,22 +65,23 @@ const categories = Object.keys(groupedUnits);
 
 export default function UnitsOfMeasurePage() {
   return (
-    <PermissionGuard
-      resource="units-of-measure"
-      action="read"
-      allowedTenantTypes={['RETAIL']}
-      fallback={
-        <div className="py-6">
-          <div className="text-center p-8">
-            <h2 className="text-2xl font-bold mb-2">Acceso Restringido</h2>
-            <p className="text-muted-foreground">
-              Esta funcionalidad solo está disponible para tenants de tipo RETAIL.
-            </p>
+    <TenantRequiredGuard>
+      <PermissionGuard
+        resource="units-of-measure"
+        action="read"
+        allowedTenantTypes={['RETAIL']}
+        fallback={
+          <div className="py-6">
+            <div className="text-center p-8">
+              <h2 className="text-2xl font-bold mb-2">Acceso Restringido</h2>
+              <p className="text-muted-foreground">
+                Esta funcionalidad solo está disponible para tenants de tipo RETAIL.
+              </p>
+            </div>
           </div>
-        </div>
-      }
-    >
-      <div className="space-y-6">
+        }
+      >
+        <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Ruler className="h-8 w-8" />
@@ -151,9 +153,10 @@ export default function UnitsOfMeasurePage() {
               </p>
             </div>
           </CardContent>
-        </Card>
-      </div>
-    </PermissionGuard>
+          </Card>
+        </div>
+      </PermissionGuard>
+    </TenantRequiredGuard>
   );
 }
 
