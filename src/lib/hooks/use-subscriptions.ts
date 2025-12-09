@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { endpoints } from '../api/endpoints';
+import { useTenantEnabled } from './use-tenant-enabled';
 
 export interface SubscriptionLimits {
   max_products: number;
@@ -25,6 +26,8 @@ export interface Subscription {
 }
 
 export function useSubscriptionLimits() {
+  const tenantEnabled = useTenantEnabled();
+  
   return useQuery({
     queryKey: ['subscription-limits'],
     queryFn: async () => {
@@ -33,6 +36,7 @@ export function useSubscriptionLimits() {
       );
       return response.data.data;
     },
+    enabled: tenantEnabled,
   });
 }
 

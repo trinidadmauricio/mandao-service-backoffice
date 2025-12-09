@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { endpoints } from '../api/endpoints';
+import { useTenantEnabled } from './use-tenant-enabled';
 
 export interface Category {
   id: string;
@@ -17,12 +18,15 @@ export interface Category {
 }
 
 export function useCategories() {
+  const tenantEnabled = useTenantEnabled();
+  
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       const response = await apiClient.get<{ data: Category[] }>(endpoints.categories.list);
       return response.data.data;
     },
+    enabled: tenantEnabled,
   });
 }
 
