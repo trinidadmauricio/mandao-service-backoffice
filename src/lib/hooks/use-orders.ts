@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { endpoints } from '../api/endpoints';
+import { useTenantEnabled } from './use-tenant-enabled';
 import type { Order } from '@/types/api';
 
 export interface OrdersFilters {
@@ -24,6 +25,8 @@ export interface OrdersResponse {
 }
 
 export function useOrders(filters?: OrdersFilters) {
+  const tenantEnabled = useTenantEnabled();
+  
   return useQuery({
     queryKey: ['orders', filters],
     queryFn: async () => {
@@ -41,6 +44,7 @@ export function useOrders(filters?: OrdersFilters) {
         totalPages: response.data.totalPages,
       } as OrdersResponse;
     },
+    enabled: tenantEnabled,
   });
 }
 
