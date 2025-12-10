@@ -148,6 +148,65 @@ src/
 - Contadores de órdenes
 - Proveedores logísticos
 
+## Docker
+
+### Construcción de la Imagen
+
+**IMPORTANTE:** Las variables de entorno que comienzan con `NEXT_PUBLIC_*` se inyectan en **build time**, no en runtime. Por lo tanto, debes pasarlas durante la construcción de la imagen usando `--build-arg`.
+
+El Dockerfile está configurado para leer estas variables de los `--build-arg` que pases durante el build:
+
+```bash
+# Opción 1: Pasar valores directamente
+docker build \
+  --build-arg NEXT_PUBLIC_API_URL=https://api.tudominio.com \
+  --build-arg NEXT_PUBLIC_APP_URL=https://backoffice.tudominio.com \
+  -t mandao-backoffice:latest \
+  .
+
+# Opción 2: Usar variables de entorno de tu sistema
+export NEXT_PUBLIC_API_URL=https://api.tudominio.com
+export NEXT_PUBLIC_APP_URL=https://backoffice.tudominio.com
+
+docker build \
+  --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+  --build-arg NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
+  -t mandao-backoffice:latest \
+  .
+
+# Opción 3: Usar un archivo .env (requiere docker-compose o script)
+# Crear un archivo .env.build con:
+# NEXT_PUBLIC_API_URL=https://api.tudominio.com
+# NEXT_PUBLIC_APP_URL=https://backoffice.tudominio.com
+# Luego usar un script que lea el archivo y pase los --build-arg
+```
+
+### Ejecutar el Contenedor
+
+```bash
+# Ejecutar el contenedor (las variables NEXT_PUBLIC_* ya están compiladas)
+docker run -p 3000:3000 mandao-backoffice:latest
+
+# Si necesitas pasar otras variables de entorno (NO NEXT_PUBLIC_*), puedes hacerlo así:
+docker run -p 3000:3000 \
+  -e OTRA_VARIABLE=valor \
+  mandao-backoffice:latest
+```
+
+### Notas sobre Variables de Entorno
+
+- **Build-time variables (`NEXT_PUBLIC_*`):** 
+  - ✅ Deben pasarse con `--build-arg` durante `docker build`
+  - ✅ El Dockerfile las lee automáticamente de los `ARG` que pases
+  - ❌ **NO funcionan** si las pasas con `-e` o `--env-file` durante `docker run`
+  - ⚠️ Si no las pasas, se usarán los valores por defecto (`http://localhost:3001` y `http://localhost:3000`)
+
+- **Runtime variables (sin prefijo `NEXT_PUBLIC_`):** 
+  - ✅ Pueden pasarse con `-e` o `--env-file` durante `docker run`
+  - ✅ Útiles para configuraciones del servidor que no se exponen al cliente
+
+**Si necesitas cambiar la URL de la API después de construir la imagen, tendrás que reconstruir la imagen con el nuevo valor.**
+
 ## Testing
 
 El proyecto usa Jest y React Testing Library para tests unitarios. La cobertura mínima requerida es del 80%.

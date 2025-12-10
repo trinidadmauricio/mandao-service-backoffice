@@ -169,5 +169,10 @@ export const endpoints = {
     update: (id: string) => `${API_BASE}/logistics-providers/${id}`,
     delete: (id: string) => `${API_BASE}/logistics-providers/${id}`,
   },
+  // Storefront
+  storefront: {
+    config: `${API_BASE}/storefront/config`,
+    update: `${API_BASE}/storefront`,
+  },
 } as const;
 
