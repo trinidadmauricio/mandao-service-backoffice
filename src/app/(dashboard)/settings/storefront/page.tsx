@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useStorefront, useUpdateStorefront } from '@/lib/hooks/use-storefront';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,8 +42,7 @@ const templates: Array<{
 ];
 
 export default function StorefrontSettingsPage() {
-  const { user } = useAuth();
-  const { config, isLoading, template: currentTemplate } = useStorefront();
+  const { isLoading, template: currentTemplate } = useStorefront();
   const updateStorefront = useUpdateStorefront();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);

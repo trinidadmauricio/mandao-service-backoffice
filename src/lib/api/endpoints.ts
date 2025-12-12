@@ -59,6 +59,7 @@ export const endpoints = {
     get: (id: string) => `${API_BASE}/drivers/${id}`,
     update: (id: string) => `${API_BASE}/drivers/${id}`,
     delete: (id: string) => `${API_BASE}/drivers/${id}`,
+    available: `${API_BASE}/drivers/available`,
   },
   // Vehicles
   vehicles: {

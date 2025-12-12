@@ -80,6 +80,7 @@ export interface Order {
   special_instructions?: string;
   priority: 'NORMAL' | 'URGENT';
   cargo_description?: string;
+  cargo_size?: 'SMALL' | 'MEDIUM' | 'LARGE' | 'EXTRA_LARGE';
   tracking_code: string;
   created_at: string;
   updated_at: string;

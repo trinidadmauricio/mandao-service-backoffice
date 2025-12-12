@@ -100,3 +100,48 @@ export function useDeleteDriver() {
   });
 }
 
+export interface AvailableDriversFilters {
+  logistics_provider_id?: string;
+  cargo_size?: 'SMALL' | 'MEDIUM' | 'LARGE' | 'EXTRA_LARGE'; // Para filtrar por compatibilidad de vehículo
+  order_lat?: number; // Latitud de la orden (para cálculo de proximidad)
+  order_lng?: number; // Longitud de la orden (para cálculo de proximidad)
+}
+
+export interface AvailableDriver {
+  id: string;
+  user_id: string;
+  logistics_provider_id: string;
+  availability_status: 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'SUSPENDED';
+  vehicle_id: string | null;
+  vehicle_type: 'MOTORCYCLE' | 'SEDAN' | 'MINI_VAN' | 'PANEL' | 'TRUCK' | 'PICKUP' | null;
+  vehicle_license_plate: string | null;
+  active_orders_count: number;
+  max_orders: number;
+  rating_avg: number | null;
+  total_deliveries: number;
+  user: {
+    first_name: string;
+    last_name: string;
+    phone: string | null;
+    email: string;
+  };
+  distance_km?: number; // Distancia a la orden en km (si se proporciona order_lat/lng)
+}
+
+export function useAvailableDrivers(filters?: AvailableDriversFilters) {
+  return useQuery({
+    queryKey: ['drivers', 'available', filters],
+    queryFn: async () => {
+      const response = await apiClient.get<{
+        status: string;
+        data: AvailableDriver[];
+      }>(endpoints.drivers.available, {
+        params: filters,
+      });
+      return response.data.data || [];
+    },
+    staleTime: 30 * 1000, // 30 segundos - los drivers disponibles cambian frecuentemente
+    refetchInterval: 10 * 1000, // Refrescar cada 10 segundos
+  });
+}
+

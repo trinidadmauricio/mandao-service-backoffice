@@ -9,6 +9,7 @@ import { TenantRequiredGuard } from '@/components/auth/tenant-required-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
+import { CargoSizeBadge } from '@/components/orders/cargo-size-badge';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
@@ -104,10 +105,13 @@ export default function OrdersPage() {
           const order = row.original;
           return (
             <div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-wrap gap-1">
                 <p className="font-medium">{order.order_display_number}</p>
                 <OrderStatusBadge status={order.status} />
                 <Badge variant="outline">{order.order_type}</Badge>
+                {order.cargo_size && (
+                  <CargoSizeBadge cargoSize={order.cargo_size} showIcon={false} />
+                )}
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Tracking: {order.tracking_code}

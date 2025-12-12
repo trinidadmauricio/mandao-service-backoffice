@@ -11,6 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
+import { CargoSizeBadge } from "@/components/orders/cargo-size-badge";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/utils/date";
@@ -104,6 +105,9 @@ export default function OrderDetailPage() {
                 <Badge variant="outline" className="text-xs">
                   {order.order_type}
                 </Badge>
+                {order.cargo_size && (
+                  <CargoSizeBadge cargoSize={order.cargo_size} />
+                )}
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -291,6 +295,14 @@ export default function OrderDetailPage() {
                     </p>
                     <Badge variant="outline">{order.order_type}</Badge>
                   </div>
+                  {order.cargo_size && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">
+                        Tamaño de Carga
+                      </p>
+                      <CargoSizeBadge cargoSize={order.cargo_size} />
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">
                       Prioridad
