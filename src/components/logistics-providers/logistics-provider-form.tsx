@@ -29,7 +29,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 const logisticsProviderSchema = z.object({
   company_name: z.string().min(1, 'El nombre de la empresa es requerido').max(255),
-  tax_id: z.string().min(1, 'El RUC/NIT es requerido').max(50),
+  tax_id: z.string().min(1, 'El Identificador Fiscal es requerido').max(50),
   representative_name: z.string().min(1, 'El nombre del representante es requerido').max(255),
   representative_phone: z.string().min(1, 'El teléfono es requerido').max(50),
   representative_document: z.string().min(1, 'El documento del representante es requerido').max(50),
@@ -143,7 +143,7 @@ export function LogisticsProviderForm({ initialData, onSuccess }: LogisticsProvi
             name="tax_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>RUC/NIT *</FormLabel>
+                <FormLabel>Identificador Fiscal *</FormLabel>
                 <FormControl>
                   <Input disabled={isPending} {...field} />
                 </FormControl>

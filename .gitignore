@@ -43,4 +43,5 @@ next-env.d.ts
 
 # tracking (opcional, si quieres versionar)
 # .tracking/
+local-docs
 

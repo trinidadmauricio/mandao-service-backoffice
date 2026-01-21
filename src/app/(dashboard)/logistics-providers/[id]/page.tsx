@@ -160,7 +160,7 @@ export default function LogisticsProviderDetailPage() {
                 <p className="font-medium">{provider.company_name}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">RUC/NIT</p>
+                <p className="text-sm text-muted-foreground">Identificador Fiscal</p>
                 <p className="font-medium">{provider.tax_id}</p>
               </div>
               <div>

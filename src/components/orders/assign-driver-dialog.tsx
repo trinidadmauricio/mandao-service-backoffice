@@ -1,8 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useDrivers } from '@/lib/hooks/use-drivers';
-import { useAssignDriver } from '@/lib/hooks/use-orders';
+import { useState, useEffect, useRef } from "react";
+import { useDrivers } from "@/lib/hooks/use-drivers";
+import { useAssignDriver } from "@/lib/hooks/use-orders";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { usePermissions } from "@/lib/hooks/use-permissions";
+import { USER_ROLE } from "@/lib/constants/roles";
 import {
   Dialog,
   DialogContent,
@@ -10,27 +13,46 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Combobox } from '@/components/ui/combobox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
-import { useToast } from '@/components/ui/use-toast';
-import { Truck, AlertCircle } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Combobox } from "@/components/ui/combobox";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/use-toast";
+import { Truck, AlertCircle } from "lucide-react";
 
 interface AssignDriverDialogProps {
   orderId: string;
-  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+  buttonSize?: "default" | "sm" | "lg" | "icon";
   buttonClassName?: string;
   hasDriver?: boolean;
 }
 
-export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClassName, hasDriver = false }: AssignDriverDialogProps) {
+export function AssignDriverDialog({
+  orderId,
+  buttonSize = "default",
+  buttonClassName,
+  hasDriver = false,
+}: AssignDriverDialogProps) {
   const [open, setOpen] = useState(false);
-  const [selectedDriverId, setSelectedDriverId] = useState<string>('');
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("");
+  const { user } = useAuth();
+  const { role } = usePermissions();
+
+  // Para LOGISTICS_PROVIDER y SUPERVISOR, filtrar por su logistics_provider_id
+  // Para SAAS roles, no filtrar (pueden ver todos los drivers)
+  const isLogisticsRole =
+    role === USER_ROLE.LOGISTICS_PROVIDER || role === USER_ROLE.SUPERVISOR;
+  const logisticsProviderId = isLogisticsRole
+    ? user?.logistics_provider_id
+    : undefined;
+
   // Filtrar solo drivers disponibles desde el backend
-  const { data: driversResponse, isLoading: isLoadingDrivers } = useDrivers({ availability_status: 'AVAILABLE' });
+  const { data: driversResponse, isLoading: isLoadingDrivers } = useDrivers({
+    availability_status: "AVAILABLE",
+    ...(logisticsProviderId && { logistics_provider_id: logisticsProviderId }),
+  });
   const assignDriver = useAssignDriver();
   const { toast } = useToast();
 
@@ -38,11 +60,11 @@ export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClas
   // No resetear cuando el popover del combobox se cierra
   const previousOpenRef = useRef(open);
   const isSubmittingRef = useRef(false);
-  
+
   useEffect(() => {
     // Solo resetear si el diálogo pasó de abierto a cerrado (no cuando el popover se cierra)
     if (previousOpenRef.current && !open && !isSubmittingRef.current) {
-      setSelectedDriverId('');
+      setSelectedDriverId("");
     }
     previousOpenRef.current = open;
     isSubmittingRef.current = false;
@@ -58,17 +80,20 @@ export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClas
         driverId: selectedDriverId,
       });
       toast({
-        title: 'Driver asignado',
-        description: 'El driver ha sido asignado exitosamente a la orden.',
+        title: "Driver asignado",
+        description: "El driver ha sido asignado exitosamente a la orden.",
       });
-      setSelectedDriverId('');
+      setSelectedDriverId("");
       setOpen(false);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al asignar el driver. Por favor, intenta nuevamente.';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error al asignar el driver. Por favor, intenta nuevamente.";
       toast({
-        title: 'Error',
+        title: "Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       isSubmittingRef.current = false;
@@ -83,16 +108,18 @@ export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClas
       <DialogTrigger asChild>
         <Button variant="outline" size={buttonSize} className={buttonClassName}>
           <Truck className="h-4 w-4 mr-2" />
-          {hasDriver ? 'Cambiar Driver' : 'Asignar Driver'}
+          {hasDriver ? "Cambiar Driver" : "Asignar Driver"}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{hasDriver ? 'Cambiar Driver' : 'Asignar Driver'}</DialogTitle>
+          <DialogTitle>
+            {hasDriver ? "Cambiar Driver" : "Asignar Driver"}
+          </DialogTitle>
           <DialogDescription>
-            {hasDriver 
-              ? 'Selecciona un nuevo driver para esta orden. El driver actual será reemplazado.'
-              : 'Selecciona un driver para asignar a esta orden.'}
+            {hasDriver
+              ? "Selecciona un nuevo driver para esta orden. El driver actual será reemplazado."
+              : "Selecciona un driver para asignar a esta orden."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -112,8 +139,12 @@ export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClas
               <Combobox
                 options={availableDrivers.map((driver) => ({
                   value: driver.id,
-                  label: `${driver.user?.first_name || 'N/A'} ${driver.user?.last_name || ''} - ${driver.user?.email || driver.driving_license}`, // Para búsqueda
-                  displayLabel: `${driver.user?.first_name || 'N/A'} ${driver.user?.last_name || ''}`, // Solo nombre para mostrar
+                  label: `${driver.user?.first_name || "N/A"} ${
+                    driver.user?.last_name || ""
+                  } - ${driver.user?.email || driver.driving_license}`, // Para búsqueda
+                  displayLabel: `${driver.user?.first_name || "N/A"} ${
+                    driver.user?.last_name || ""
+                  }`, // Solo nombre para mostrar
                 }))}
                 value={selectedDriverId}
                 onValueChange={setSelectedDriverId}
@@ -125,11 +156,22 @@ export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClas
             )}
           </div>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={assignDriver.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={assignDriver.isPending}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} disabled={!selectedDriverId || assignDriver.isPending || availableDrivers.length === 0}>
-              {assignDriver.isPending ? 'Asignando...' : 'Asignar'}
+            <Button
+              onClick={handleSubmit}
+              disabled={
+                !selectedDriverId ||
+                assignDriver.isPending ||
+                availableDrivers.length === 0
+              }
+            >
+              {assignDriver.isPending ? "Asignando..." : "Asignar"}
             </Button>
           </div>
         </div>
@@ -137,4 +179,3 @@ export function AssignDriverDialog({ orderId, buttonSize = 'default', buttonClas
     </Dialog>
   );
 }
-

@@ -142,15 +142,18 @@ export default function OrderDetailPage() {
           {hasPermission("orders", "manage") && (
             <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
               <div className="flex flex-wrap items-center gap-2">
-                {/* Solo roles SAAS pueden asignar drivers (sistema automático vendrá después) */}
-                {(role === USER_ROLE.SAAS_ADMIN || role === USER_ROLE.SAAS_EDITOR) && (
+                {/* Roles que pueden asignar drivers: SAAS, LOGISTICS_PROVIDER, SUPERVISOR */}
+                {(role === USER_ROLE.SAAS_ADMIN ||
+                  role === USER_ROLE.SAAS_EDITOR ||
+                  role === USER_ROLE.LOGISTICS_PROVIDER ||
+                  role === USER_ROLE.SUPERVISOR) && (
                   <AssignDriverDialog
                     orderId={order.id}
                     buttonSize="sm"
                     hasDriver={!!currentDriver}
                   />
                 )}
-                {order.order_type !== 'ON_DEMAND' && (
+                {order.order_type !== "ON_DEMAND" && (
                   <ChangeBranchDialog
                     orderId={order.id}
                     buttonSize="sm"
@@ -699,7 +702,7 @@ export default function OrderDetailPage() {
             </Card>
 
             {/* Branch Assignment - Solo para órdenes RETAIL */}
-            {order.order_type !== 'ON_DEMAND' && (
+            {order.order_type !== "ON_DEMAND" && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -708,83 +711,83 @@ export default function OrderDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                {currentBranch &&
-                currentBranch.branch_snapshot &&
-                typeof currentBranch.branch_snapshot === "object" ? (
-                  (() => {
-                    const branch = currentBranch.branch_snapshot as Record<
-                      string,
-                      unknown
-                    >;
-                    return (
-                      <div className="space-y-3">
-                        {branch.name ? (
+                  {currentBranch &&
+                  currentBranch.branch_snapshot &&
+                  typeof currentBranch.branch_snapshot === "object" ? (
+                    (() => {
+                      const branch = currentBranch.branch_snapshot as Record<
+                        string,
+                        unknown
+                      >;
+                      return (
+                        <div className="space-y-3">
+                          {branch.name ? (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Nombre
+                              </p>
+                              <p className="font-medium">
+                                {String(branch.name || "")}
+                              </p>
+                            </div>
+                          ) : null}
+                          {branch.address ? (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Dirección
+                              </p>
+                              <p className="font-medium text-sm">
+                                {String(branch.address || "")}
+                              </p>
+                            </div>
+                          ) : null}
+                          {branch.contact_phone ? (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Teléfono
+                              </p>
+                              <p className="font-medium text-sm">
+                                {String(branch.contact_phone || "")}
+                              </p>
+                            </div>
+                          ) : null}
+                          {branch.is_main !== undefined && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Tipo
+                              </p>
+                              <Badge
+                                variant={branch.is_main ? "default" : "outline"}
+                                className="text-xs"
+                              >
+                                {branch.is_main ? "Principal" : "Secundaria"}
+                              </Badge>
+                            </div>
+                          )}
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-1">
-                              Nombre
-                            </p>
-                            <p className="font-medium">
-                              {String(branch.name || "")}
-                            </p>
-                          </div>
-                        ) : null}
-                        {branch.address ? (
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">
-                              Dirección
+                              Asignada el
                             </p>
                             <p className="font-medium text-sm">
-                              {String(branch.address || "")}
+                              {formatDate(
+                                currentBranch.assigned_at ||
+                                  currentBranch.created_at
+                              )}
                             </p>
                           </div>
-                        ) : null}
-                        {branch.contact_phone ? (
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">
-                              Teléfono
-                            </p>
-                            <p className="font-medium text-sm">
-                              {String(branch.contact_phone || "")}
-                            </p>
-                          </div>
-                        ) : null}
-                        {branch.is_main !== undefined && (
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">
-                              Tipo
-                            </p>
-                            <Badge
-                              variant={branch.is_main ? "default" : "outline"}
-                              className="text-xs"
-                            >
-                              {branch.is_main ? "Principal" : "Secundaria"}
-                            </Badge>
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">
-                            Asignada el
-                          </p>
-                          <p className="font-medium text-sm">
-                            {formatDate(
-                              currentBranch.assigned_at ||
-                                currentBranch.created_at
-                            )}
-                          </p>
                         </div>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <div className="text-center py-4">
-                    <Building2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                    <p className="text-sm text-muted-foreground">
-                      No hay sucursal asignada
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-center py-4">
+                      <Building2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                      <p className="text-sm text-muted-foreground">
+                        No hay sucursal asignada
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>

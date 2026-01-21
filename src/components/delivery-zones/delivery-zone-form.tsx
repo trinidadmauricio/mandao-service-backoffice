@@ -15,11 +15,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
+import { BoundaryInput } from '@/components/delivery-zones/boundary-input';
 
 const deliveryZoneSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -150,18 +150,12 @@ export function DeliveryZoneForm({ zoneId }: DeliveryZoneFormProps) {
               name="boundary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Boundary (WKT) *{' '}
-                    <span className="text-xs text-muted-foreground">
-                      (Formato: POLYGON((lng1 lat1, lng2 lat2, ...)))
-                    </span>
-                  </FormLabel>
+                  <FormLabel>Zona de cobertura *</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <BoundaryInput
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
                       disabled={isPending}
-                      className="font-mono"
-                      placeholder="POLYGON((-58.3816 -34.6037, -58.3826 -34.6047, -58.3836 -34.6057, -58.3816 -34.6037))"
-                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

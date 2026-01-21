@@ -60,6 +60,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Órdenes (solo read y update - no puede crear ni eliminar)
     { resource: "orders", action: "read" },
     { resource: "orders", action: "update" },
+    { resource: "orders", action: "manage" },
     // Drivers
     { resource: "drivers", action: "read" },
     { resource: "drivers", action: "create" },
@@ -125,6 +126,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Órdenes (solo órdenes asignadas a su proveedor)
     { resource: "orders", action: "read" },
     { resource: "orders", action: "update" },
+    { resource: "orders", action: "manage" },
     // Drivers (solo de su proveedor)
     { resource: "drivers", action: "read" },
     { resource: "drivers", action: "create" },

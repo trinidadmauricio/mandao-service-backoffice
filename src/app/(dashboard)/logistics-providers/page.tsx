@@ -175,7 +175,7 @@ export default function LogisticsProvidersPage() {
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar por nombre, RUC/NIT o representante..."
+                      placeholder="Buscar por nombre, Identificador Fiscal o representante..."
                       className="pl-8 w-64"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -279,7 +279,7 @@ export default function LogisticsProvidersPage() {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
-                            RUC/NIT: {provider.tax_id} | Representante:{" "}
+                            Identificador Fiscal: {provider.tax_id} | Representante:{" "}
                             {provider.representative_name}
                           </p>
                           <p className="text-xs text-muted-foreground">

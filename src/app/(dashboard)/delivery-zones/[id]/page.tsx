@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Edit } from 'lucide-react';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { DeliveryZoneForm } from '@/components/delivery-zones/delivery-zone-form';
+import { PolygonDrawer } from '@/components/shared/polygon-drawer';
 
 export default function DeliveryZoneDetailPage() {
   const params = useParams();
@@ -66,6 +67,15 @@ export default function DeliveryZoneDetailPage() {
           </Link>
         </RoleGuard>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Zona de cobertura</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PolygonDrawer value={zone.boundary} disabled height={360} />
+        </CardContent>
+      </Card>
 
       <DeliveryZoneForm zoneId={zoneId} />
     </div>
